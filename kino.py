@@ -30,7 +30,8 @@ def movies():
     cur = conn.cursor()
 
     # Получаем все фильмы из базы данных
-    cur.execute("SELECT title, year, genre, tags FROM movies;")
+    sort_order = request.form.get('sort', 'desc')  # По умолчанию сортировка по убыванию
+    cur.execute(f"SELECT title, year, genre, tags, rating FROM movies ORDER BY rating {sort_order};")
     movies = cur.fetchall()
 
     # Получаем уникальные года, жанры и теги для фильтров
@@ -45,14 +46,11 @@ def movies():
 
     # Фильтрация
     filtered_movies = movies
+    selected_years = request.form.getlist('year')
+    selected_genres = request.form.getlist('genre')
+    selected_tags = request.form.getlist('tag')
+
     if request.method == 'POST':
-        selected_years = request.form.getlist('year')
-        selected_genres = request.form.getlist('genre')
-        selected_tags = request.form.getlist('tag')
-
-        print("Selected Years:", selected_years)
-        print("Movies:", [(movie[0], movie[1]) for movie in movies])  # Отладочная информация
-
         filtered_movies = [
             movie for movie in movies
             if (not selected_years or str(movie[1]) in selected_years) and
@@ -61,16 +59,59 @@ def movies():
         ]
 
     dbClose(cur, conn)
-    return render_template('movies.html', movies=filtered_movies, years=years, genres=genres, tags=tags)
+    return render_template('movies.html', movies=filtered_movies, years=years, genres=genres, tags=tags,
+                           selected_years=selected_years, selected_genres=selected_genres, selected_tags=selected_tags)
+
+@app.route('/add_favorite/<string:title>')
+def add_favorite(title):
+    conn = dbConnect()
+    cur = conn.cursor()
+
+    # Добавляем фильм в избранное
+    cur.execute("UPDATE movies SET is_favorite = TRUE WHERE title = %s;", (title,))
+    conn.commit()
+
+    dbClose(cur, conn)
+    return redirect('/movies')
+
+@app.route('/mark_watched/<string:title>')
+def mark_watched(title):
+    conn = dbConnect()
+    cur = conn.cursor()
+
+    # Помечаем фильм как просмотренный
+    cur.execute("UPDATE movies SET is_watched = TRUE WHERE title = %s;", (title,))
+    conn.commit()
+
+    dbClose(cur, conn)
+    return redirect('/izbr')
+
+@app.route('/remove_favorite/<string:title>')
+def remove_favorite(title):
+    conn = dbConnect()
+    cur = conn.cursor()
+
+    # Удаляем фильм из избранного
+    cur.execute("UPDATE movies SET is_favorite = FALSE WHERE title = %s;", (title,))
+    conn.commit()
+
+    dbClose(cur, conn)
+    return redirect('/izbr')
+
+@app.route('/izbr', methods=['GET', 'POST'])
+def izbr():
+    conn = dbConnect()
+    cur = conn.cursor()
+
+    # Получаем избранные фильмы для текущего пользователя
+    cur.execute("SELECT title, year, genre, tags, rating, description, is_watched FROM movies WHERE is_favorite = TRUE;")
+    favorites = cur.fetchall()
+
+    dbClose(cur, conn)
+    return render_template('izbr.html', favorites=favorites)
 
 
-@app.route('/series')
-def series():
-    return render_template('series.html')
 
-@app.route('/contact')
-def contact():
-    return render_template('contact.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

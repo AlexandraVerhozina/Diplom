@@ -28,7 +28,17 @@
         .container {
             max-width: 1200px;
             margin: auto;
+            display: flex;
             padding: 20px;
+        }
+        .filters {
+            width: 25%;
+            margin-right: 20px;
+        }
+        .movies-list {
+            display: flex; /* Используем flexbox для списка фильмов */
+            flex-wrap: wrap; /* Позволяем элементам переноситься на новую строку */
+            justify-content: space-between; /* Равномерно распределяем фильмы */
         }
         .movie {
             background: #fff;
@@ -36,9 +46,10 @@
             border-radius: 5px;
             margin: 10px;
             padding: 15px;
-            display: inline-block;
-            width: calc(25% - 40px);
+            width: calc(30% - 40px); /* Устанавливаем ширину для 3-х элементов в строке */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex; /* Используем flexbox для карточки фильма */
+            flex-direction: column; /* Располагаем элементы в колонку внутри карточки */
         }
         .movie img {
             max-width: 100%;
@@ -52,9 +63,15 @@
             position: relative;
             bottom: 0;
             width: 100%;
+            left: 0; 
+            right: 0;
         }
         .filter-group {
             margin-bottom: 20px;
+            max-height: 150px; /* Ограничение высоты */
+            overflow-y: auto; /* Прокрутка по вертикали */
+            border: 1px solid #ccc; /* Граница */
+            padding: 20px; /* Отступы */
         }
     </style>
 </head>
@@ -64,57 +81,73 @@
         <nav>
             <a href="/">Главная</a>
             <a href="/movies">Фильмы</a>
-            <a href="/series">Сериалы</a>
-            <a href="/contact">Контакты</a>
+            <a href="/izbr">Избранное</a>
             <a href="/login">Вход</a>
             <a href="/register">Регистрация</a>
         </nav>
     </header>
     <div class="container">
-        <h2>Фильтры</h2>
-        <form method="POST">
-            <div class="filter-group">
-                <h3>Год</h3>
-                {% for year in years %}
-                    <label>
-                        <input type="checkbox" name="year" value="{{ year }}">
-                        {{ year }}
-                    </label>
-                {% endfor %}
-            </div>
-            <div class="filter-group">
-                <h3>Жанр</h3>
-                {% for genre in genres %}
-                    <label>
-                        <input type="checkbox" name="genre" value="{{ genre }}">
-                        {{ genre }}
-                    </label>
-                {% endfor %}
-            </div>
-            <div class="filter-group">
-                <h3>Теги</h3>
-                {% for tag in tags %}
-                    <label>
-                        <input type="checkbox" name="tag" value="{{ tag }}">
-                        {{ tag }}
-                    </label>
-                {% endfor %}
-            </div>
-            <button type="submit">Применить фильтры</button>
-        </form>
+        <div class="filters">
+            <h2>Фильтры</h2>
+            <form method="POST">
+                <div class="filter-group">
+                    <h3>Год</h3>
+                    {% for year in years %}
+                        <label>
+                            <input type="checkbox" name="year" value="{{ year }}" 
+                                   {% if year in selected_years %}checked{% endif %}>
+                            {{ year }}
+                        </label><br>
+                    {% endfor %}
+                </div>
+                <div class="filter-group">
+                    <h3>Жанр</h3>
+                    {% for genre in genres %}
+                        <label>
+                            <input type="checkbox" name="genre" value="{{ genre }}" 
+                                   {% if genre in selected_genres %}checked{% endif %}>
+                            {{ genre }}
+                        </label><br>
+                    {% endfor %}
+                </div>
+                <div class="filter-group">
+                    <h3>Теги</h3>
+                    {% for tag in tags %}
+                        <label>
+                            <input type="checkbox" name="tag" value="{{ tag }}" 
+                                   {% if tag in selected_tags %}checked{% endif %}>
+                            {{ tag }}
+                        </label><br>
+                    {% endfor %}
+                </div>
+                <div class="filter-group">
+                    <h3>Сортировка по рейтингу</h3>
+                    <select name="sort">
+                        <option value="desc" {% if request.form.get('sort') == 'desc' %}selected{% endif %}>От лучшего к худшему</option>
+                        <option value="asc" {% if request.form.get('sort') == 'asc' %}selected{% endif %}>От худшего к лучшему</option>
+                    </select>
+                </div>
+                <button type="submit">Применить фильтры</button>
+                <button type="button" onclick="window.location.href='/movies'">Сбросить фильтры</button>
+            </form>
+        
+        </div>
 
-        <h2>Результат на основе предпочтений</h2>
         <div class="movies-list">
+            <h2>Результат на основе предпочтений</h2>0
             {% for movie in movies %}
                 <div class="movie">
                     <img src="{{ movie[0] }}.jpg" alt="{{ movie[0] }}">
                     <h3>{{ movie[0] }}</h3>
                     <p>Год: {{ movie[1] }}</p>
                     <p>Жанр: {{ movie[2] }}</p>
-                    <p>Теги: {{ movie[3] }}</p>
+                    <p>Рейтинг: {{ movie[4] }}</p> 
+                    <p>Теги: {{ movie[3] }}</p> 
+                    <a href="{{ url_for('add_favorite', title=movie[0]) }}">Добавить в избранное</a>
                 </div>
             {% endfor %}
         </div>
+        
     </div>
     <footer>
         <p>&copy; 2025 Онлайн Кинотеатр</p>
