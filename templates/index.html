@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Онлайн Кинотеатр</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background: #333;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        nav {
+            margin: 20px 0;
+        }
+        nav a {
+            color: #fff;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+        }
+        .movie {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 10px;
+            padding: 15px;
+            display: inline-block;
+            width: calc(25% - 40px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .movie img {
+            max-width: 100%;
+            border-radius: 5px;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #333;
+            color: #fff;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Добро пожаловать в Онлайн Кинотеатр</h1>
+        <nav>
+            <a href="/">Главная</a>
+            <a href="/movies">Фильмы</a>
+            <a href="/series">Сериалы</a>
+            <a href="/contact">Избранное</a>
+            <a href="/login">Вход</a>
+            <a href="/register">Регистрация</a>
+        </nav>
+    </header>
+    <div class="container">
+        <h2>Популярные фильмы</h2>
+        <div class="movie">
+            <img src="movie1.jpg" alt="Фильм 1">
+            <h3>Фильм 1</h3>
+            <p>Описание фильма 1.</p>
+        </div>
+        <div class="movie">
+            <img src="movie2.jpg" alt="Фильм 2">
+            <h3>Фильм 2</h3>
+            <p>Описание фильма 2.</p>
+        </div>
+        <div class="movie">
+            <img src="movie3.jpg" alt="Фильм 3">
+            <h3>Фильм 3</h3>
+            <p>Описание фильма 3.</p>
+        </div>
+        <div class="movie">
+            <img src="movie4.jpg" alt="Фильм 4">
+            <h3>Фильм 4</h3>
+            <p>Описание фильма 4.</p>
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2025 Онлайн Кинотеатр</p>
+    </footer>
+</body>
+</html>
