@@ -44,8 +44,8 @@
             background: #fff;
             border: 1px solid #ddd;
             border-radius: 5px;
-            margin: 10px;
-            padding: 15px;
+            margin: 5px 0; /* Уменьшаем верхний и нижний отступ */
+            padding: 10px; /* Уменьшаем внутренние отступы */
             width: calc(30% - 40px); /* Устанавливаем ширину для 3-х элементов в строке */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             display: flex; /* Используем flexbox для карточки фильма */
@@ -82,8 +82,13 @@
             <a href="/">Главная</a>
             <a href="/movies">Фильмы</a>
             <a href="/izbr">Избранное</a>
-            <a href="/login">Вход</a>
-            <a href="/register">Регистрация</a>
+            {% if 'username' in session %}
+                <a href="/user">{{ session['username'] }}</a> <!-- Иконка или имя пользователя -->
+                <a href="/logout">Выход</a>
+            {% else %}
+                <a href="/login">Вход</a>
+                <a href="/register">Регистрация</a>
+            {% endif %}
         </nav>
     </header>
     <div class="container">
@@ -127,14 +132,14 @@
                         <option value="asc" {% if request.form.get('sort') == 'asc' %}selected{% endif %}>От худшего к лучшему</option>
                     </select>
                 </div>
-                <button type="submit">Применить фильтры</button>
-                <button type="button" onclick="window.location.href='/movies'">Сбросить фильтры</button>
+                <button type="submit">Применить фильтры</button><br>
+                <br><button type="button" onclick="window.location.href='/movies'">Сбросить фильтры</button>
             </form>
         
         </div>
 
         <div class="movies-list">
-            <h2>Результат на основе предпочтений</h2>0
+            <h2>Результат на основе предпочтений</h2>
             {% for movie in movies %}
                 <div class="movie">
                     <img src="{{ movie[0] }}.jpg" alt="{{ movie[0] }}">

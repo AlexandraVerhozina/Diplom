@@ -30,10 +30,7 @@
             margin: auto;
             display: flex;
             padding: 20px;
-        }
-        .filters {
-            width: 25%;
-            margin-right: 20px;
+            flex-direction: column;
         }
         .movie {
             background: #fff;
@@ -60,12 +57,13 @@
             left: 0; 
             right: 0;
         }
-        .filter-group {
-            margin-bottom: 20px;
-            max-height: 150px; /* Ограничение высоты */
-            overflow-y: auto; /* Прокрутка по вертикали */
-            border: 1px solid #ccc; /* Граница */
-            padding: 10px; /* Отступы */
+        .message {
+            background: #ffdddd;
+            color: #d8000c;
+            border: 1px solid #d8000c;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -76,33 +74,41 @@
             <a href="/">Главная</a>
             <a href="/movies">Фильмы</a>
             <a href="/izbr">Избранное</a>
-            <a href="/login">Вход</a>
-            <a href="/register">Регистрация</a>
+            {% if 'username' in session %}
+                <a href="/user">{{ session['username'] }}</a>
+                <a href="/logout">Выход</a>
+            {% else %}
+                <a href="/login">Вход</a>
+                <a href="/register">Регистрация</a>
+            {% endif %}
         </nav>
     </header>
     <div class="container">
-        <h2>Ваши избранные фильмы</h2>
-        <div class="movies-list">
-            {% for movie in favorites %}
-                <div class="movie">
-                    <img src="{{ movie[0] }}.jpg" alt="{{ movie[0] }}">
-                    <h3>{{ movie[0] }}</h3>
-                    <p>Год: {{ movie[1] }}</p>
-                    <p>Жанр: {{ movie[2] }}</p>
-                    <p>Рейтинг: {{ movie[4] }}</p> 
-                    <p>Теги: {{ movie[3] }}</p>
-                    <p>Описание: {{ movie[5] }}</p> 
-                    {% if not movie[6] %}  
-                        <a href="{{ url_for('mark_watched', title=movie[0]) }}">Пометить как просмотренный</a>
-                    {% else %}
-                        <span>Просмотрено</span>
-                    {% endif %}
-                    <a href="{{ url_for('remove_favorite', title=movie[0]) }}">Удалить из избранного</a> 
-                </div>
-            {% else %}
-                <p>Избранных фильмов нет.</p>
-            {% endfor %}
-        </div>
+        {% if 'id' not in session %}
+            <h2>Доступ к избранному</h2>
+            <div class="message">Доступ к избранному возможен только для авторизованных пользователей.</div>
+        {% else %}
+            <h2>Ваши избранные фильмы</h2>
+            <div class="movies-list">
+                {% for movie in favorites %}
+                    <div class="movie">
+                        <img src="{{ movie[0] }}.jpg" alt="{{ movie[0] }}">
+                        <h3>{{ movie[0] }}</h3>
+                        <p>Год: {{ movie[1] }}</p>
+                        <p>Жанр: {{ movie[2] }}</p>
+                        <p>Рейтинг: {{ movie[4] }}</p> 
+                        <p>Теги: {{ movie[3] }}</p>
+                        <p>Описание: {{ movie[5] }}</p> 
+                        {% if not movie[6] %}  
+                            <a href="{{ url_for('mark_watched', title=movie[0]) }}">Пометить как просмотренный</a>
+                        {% else %}
+                            <span>Просмотрено</span>
+                        {% endif %}
+                        <a href="{{ url_for('remove_favorite', title=movie[0]) }}">Удалить из избранного</a> 
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
     </div>
     <footer>
         <p>&copy; 2025 Онлайн Кинотеатр</p>

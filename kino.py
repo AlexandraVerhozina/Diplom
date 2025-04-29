@@ -6,7 +6,6 @@ from psycopg2 import sql
 app = Flask(__name__)
 app.secret_key = '55555'
 
-
 def dbConnect(): 
     conn = psycopg2.connect( 
         host="127.0.0.1", 
@@ -64,6 +63,9 @@ def movies():
 
 @app.route('/add_favorite/<string:title>')
 def add_favorite(title):
+    if 'id' not in session:  # Проверяем, авторизован ли пользователь
+        return redirect('/login')  # Перенаправляем на страницу входа, если не авторизован
+
     conn = dbConnect()
     cur = conn.cursor()
 
@@ -110,9 +112,6 @@ def izbr():
     dbClose(cur, conn)
     return render_template('izbr.html', favorites=favorites)
 
-
-
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = ''
@@ -142,13 +141,12 @@ def login():
             session['id'] = userID
             session['username'] = username
             dbClose(cur, conn)
-            return redirect("/")  # Перенаправление на главную страницу
+            return redirect("/")  
         else:
             error = "Неправильный логин или пароль"
             dbClose(cur, conn)
             return render_template('login.html', error=error)
 
-    # Если метод GET, просто отображаем страницу входа
     return render_template('login.html', error=error)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -182,5 +180,12 @@ def register():
 
     return render_template('register.html')
 
+@app.route('/logout')
+def logout():
+    session.pop('id', None)  # Удаляем пользователя из сессии
+    session.pop('username', None)
+    return redirect('/')  # Перенаправление на главную страницу
+
 if __name__ == '__main__':
     app.run(debug=True)
+
