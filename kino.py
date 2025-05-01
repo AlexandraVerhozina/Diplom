@@ -30,7 +30,18 @@ def movies():
 
     # Получаем все фильмы из базы данных
     sort_order = request.form.get('sort', 'desc')  # По умолчанию сортировка по убыванию
-    cur.execute(f"SELECT title, year, genre, tags, rating FROM movies ORDER BY rating {sort_order};")
+    search_query = request.form.get('search', '')  # Получаем запрос на поиск
+
+    # Убедитесь, что значение сортировки безопасно
+    if sort_order not in ['asc', 'desc']:
+        sort_order = 'desc'  # По умолчанию
+
+    # Изменяем SQL-запрос для поиска по названию
+    if search_query:
+        cur.execute(f"SELECT title, year, genre, tags, rating FROM movies WHERE title ILIKE %s ORDER BY rating {sort_order}", ['%' + search_query + '%'])
+    else:
+        cur.execute(f"SELECT title, year, genre, tags, rating FROM movies ORDER BY rating {sort_order};")
+
     movies = cur.fetchall()
 
     # Получаем уникальные года, жанры и теги для фильтров
@@ -60,6 +71,7 @@ def movies():
     dbClose(cur, conn)
     return render_template('movies.html', movies=filtered_movies, years=years, genres=genres, tags=tags,
                            selected_years=selected_years, selected_genres=selected_genres, selected_tags=selected_tags)
+
 
 @app.route('/add_favorite/<string:title>')
 def add_favorite(title):
@@ -179,6 +191,29 @@ def register():
         return redirect("/login")  # Перенаправление на страницу входа
 
     return render_template('register.html')
+
+@app.route('/user', methods=['GET', 'POST'])
+def user():
+    if 'id' not in session:
+        return redirect('/login')  # Перенаправляем на страницу входа, если не авторизован
+
+    conn = dbConnect()
+    cur = conn.cursor()
+
+    # Получаем информацию о пользователе
+    cur.execute("SELECT username,  preferred_genres FROM users WHERE id = %s;", (session['id'],))
+    user = cur.fetchone()
+
+    if request.method == 'POST':
+        preferred_genres = request.form.getlist('genres')
+        # Сохраняем предпочтительные жанры
+        cur.execute("UPDATE users SET preferred_genres = %s WHERE id = %s;", (preferred_genres, session['id']))
+        conn.commit()
+
+    dbClose(cur, conn)
+
+    return render_template('user.html', user=user)
+
 
 @app.route('/logout')
 def logout():

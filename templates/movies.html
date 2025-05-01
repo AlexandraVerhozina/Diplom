@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Каталог фильмов</title>
+    
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -90,6 +91,11 @@
                 <a href="/register">Регистрация</a>
             {% endif %}
         </nav>
+        <form method="POST" action="/movies">
+            <input type="text" name="search" placeholder="Поиск фильмов..." required>
+            <button type="submit">Найти</button>
+        </form>
+        
     </header>
     <div class="container">
         <div class="filters">
@@ -142,7 +148,7 @@
             <h2>Результат на основе предпочтений</h2>
             {% for movie in movies %}
                 <div class="movie">
-                    <img src="{{ movie[0] }}.jpg" alt="{{ movie[0] }}">
+                    <img src="{{ url_for('static', filename='images/' + movie[0] + '.jpg') }}" alt="{{ movie[0] }}">
                     <h3>{{ movie[0] }}</h3>
                     <p>Год: {{ movie[1] }}</p>
                     <p>Жанр: {{ movie[2] }}</p>

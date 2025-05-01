@@ -64,13 +64,17 @@
             <a href="/movies">Фильмы</a>
             <a href="/izbr">Избранное</a>
             {% if 'username' in session %}
-                <a href="/user">{{ session['username'] }}</a> <!-- Иконка или имя пользователя -->
+                <a href="/user">{{ session['username'] }}</a> 
                 <a href="/logout">Выход</a>
             {% else %}
                 <a href="/login">Вход</a>
                 <a href="/register">Регистрация</a>
             {% endif %}
         </nav>
+        <form method="POST" action="/movies">
+            <input type="text" name="search" placeholder="Поиск фильмов..." required>
+            <button type="submit">Найти</button>
+        </form>
     </header>
     <div class="container">
         <h2>Популярные фильмы</h2>

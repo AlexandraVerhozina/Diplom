@@ -43,8 +43,11 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         .movie img {
-            max-width: 100%;
-            border-radius: 5px;
+            width: 150px; /* Задайте ширину */
+            height: 220px; /* Задайте высоту */
+            object-fit: cover; /* Сохранение пропорций, обрезая изображение */
+            border-radius: 5px; /* Закругленные углы */
+            margin-bottom: 10px; /* Отступ снизу для лучшего визуального восприятия */
         }
         footer {
             text-align: center;
@@ -82,6 +85,10 @@
                 <a href="/register">Регистрация</a>
             {% endif %}
         </nav>
+        <form method="POST" action="/movies">
+            <input type="text" name="search" placeholder="Поиск фильмов..." required>
+            <button type="submit">Найти</button>
+        </form>
     </header>
     <div class="container">
         {% if 'id' not in session %}
@@ -92,7 +99,7 @@
             <div class="movies-list">
                 {% for movie in favorites %}
                     <div class="movie">
-                        <img src="{{ movie[0] }}.jpg" alt="{{ movie[0] }}">
+                        <img src="{{ url_for('static', filename='images/' + movie[0] + '.jpg') }}" alt="{{ movie[0] }}">
                         <h3>{{ movie[0] }}</h3>
                         <p>Год: {{ movie[1] }}</p>
                         <p>Жанр: {{ movie[2] }}</p>

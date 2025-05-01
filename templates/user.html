@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль пользователя</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background: #333;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        img {
+            max-width: 150px;
+            border-radius: 50%;
+        }
+        nav {
+            margin: 20px 0;
+        }
+        nav a {
+            color: #fff;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #333;
+            color: #fff;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Профиль пользователя</h1>
+        <nav>
+            <a href="/">Главная</a>
+            <a href="/movies">Фильмы</a>
+            <a href="/izbr">Избранное</a>
+            {% if 'username' in session %}
+                <a href="/user">{{ session['username'] }}</a> 
+                <a href="/logout">Выход</a>
+            {% else %}
+                <a href="/login">Вход</a>
+                <a href="/register">Регистрация</a>
+            {% endif %}
+        </nav>
+    </header>
+    <div class="container">
+        {% if user %}
+            <h2>{{ user[0] }}</h2>
+            <img src="{{ url_for('static', filename='images/' + user[0] + '.jpg') }}" alt="{{ user[0] }}">
+            
+            <h3>Предпочтительные жанры</h3>
+            <form method="POST">
+                <label>
+                    <input type="checkbox" name="genres" value="драма" {% if user[3] and 'драма' in user_info[3] %}checked{% endif %}> Драма
+                </label><br>
+                <label>
+                    <input type="checkbox" name="genres" value="комедия" {% if user[3] and 'комедия' in user_info[3] %}checked{% endif %}> Комедия
+                </label><br>
+                <label>
+                    <input type="checkbox" name="genres" value="боевик" {% if user[3] and 'боевик' in user_info[3] %}checked{% endif %}> Боевик
+                </label><br>
+                <label>
+                    <input type="checkbox" name="genres" value="ужасы" {% if user[3] and 'ужасы' in user_info[3] %}checked{% endif %}> Ужасы
+                </label><br>
+                
+                <button type="submit">Сохранить предпочтения</button>
+            </form>
+        {% else %}
+            <p>Пользователь не найден.</p>
+        {% endif %}
+    </div>
+    <footer>
+        <p>&copy; 2025 Онлайн Кинотеатр</p>
+    </footer>
+</body>
+</html>
