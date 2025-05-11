@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Каталог фильмов</title>
-    
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -37,20 +36,19 @@
             margin-right: 20px;
         }
         .movies-list {
-            display: flex; /* Используем flexbox для списка фильмов */
-            flex-wrap: wrap; /* Позволяем элементам переноситься на новую строку */
-            justify-content: space-between; /* Равномерно распределяем фильмы */
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            width: 75%;
         }
         .movie {
             background: #fff;
             border: 1px solid #ddd;
             border-radius: 5px;
-            margin: 5px 0; /* Уменьшаем верхний и нижний отступ */
-            padding: 10px; /* Уменьшаем внутренние отступы */
-            width: calc(30% - 40px); /* Устанавливаем ширину для 3-х элементов в строке */
+            margin: 10px 0;
+            padding: 15px;
+            width: calc(33% - 30px);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            display: flex; /* Используем flexbox для карточки фильма */
-            flex-direction: column; /* Располагаем элементы в колонку внутри карточки */
         }
         .movie img {
             max-width: 100%;
@@ -61,18 +59,43 @@
             padding: 20px;
             background: #333;
             color: #fff;
-            position: relative;
-            bottom: 0;
-            width: 100%;
-            left: 0; 
-            right: 0;
         }
         .filter-group {
             margin-bottom: 20px;
-            max-height: 150px; /* Ограничение высоты */
-            overflow-y: auto; /* Прокрутка по вертикали */
-            border: 1px solid #ccc; /* Граница */
-            padding: 20px; /* Отступы */
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        .admin-links {
+            background: #444;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .admin-links a {
+            color: #fff;
+            margin-right: 15px;
+        }
+        .flash-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .flash-success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .flash-danger {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .flash-warning {
+            background-color: #fcf8e3;
+            color: #8a6d3b;
+        }
+        .flash-info {
+            background-color: #d9edf7;
+            color: #31708f;
         }
     </style>
 </head>
@@ -80,11 +103,13 @@
     <header>
         <h1>Каталог фильмов</h1>
         <nav>
-            <a href="/">Главная</a>
             <a href="/movies">Фильмы</a>
             <a href="/izbr">Избранное</a>
             {% if 'username' in session %}
-                <a href="/user">{{ session['username'] }}</a> <!-- Иконка или имя пользователя -->
+                <a href="/user">{{ session['username'] }}</a>
+                {% if session.get('is_admin') %}
+                    <a href="/admin/add_movie">Добавить фильм</a>
+                {% endif %}
                 <a href="/logout">Выход</a>
             {% else %}
                 <a href="/login">Вход</a>
@@ -92,11 +117,21 @@
             {% endif %}
         </nav>
         <form method="POST" action="/movies">
-            <input type="text" name="search" placeholder="Поиск фильмов..." required>
+            <input type="text" name="search" placeholder="Поиск фильмов..." value="{{ request.form.get('search', '') }}">
             <button type="submit">Найти</button>
         </form>
-        
     </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <div class="container">
         <div class="filters">
             <h2>Фильтры</h2>
@@ -106,7 +141,7 @@
                     {% for year in years %}
                         <label>
                             <input type="checkbox" name="year" value="{{ year }}" 
-                                   {% if year in selected_years %}checked{% endif %}>
+                                   {% if year|string in selected_years %}checked{% endif %}>
                             {{ year }}
                         </label><br>
                     {% endfor %}
@@ -115,50 +150,59 @@
                     <h3>Жанр</h3>
                     {% for genre in genres %}
                         <label>
-                            <input type="checkbox" name="genre" value="{{ genre }}" 
-                                   {% if genre in selected_genres %}checked{% endif %}>
-                            {{ genre }}
+                            <input type="checkbox" name="genre" value="{{ genre[1] }}" 
+                                   {% if genre[1] in selected_genres %}checked{% endif %}>
+                            {{ genre[1] }}
                         </label><br>
                     {% endfor %}
                 </div>
                 <div class="filter-group">
-                    <h3>Теги</h3>
-                    {% for tag in tags %}
+                    <h3>Страна</h3>
+                    {% for country in countries %}
                         <label>
-                            <input type="checkbox" name="tag" value="{{ tag }}" 
-                                   {% if tag in selected_tags %}checked{% endif %}>
-                            {{ tag }}
+                            <input type="checkbox" name="country" value="{{ country[1] }}" 
+                                   {% if country[1] in selected_countries %}checked{% endif %}>
+                            {{ country[1] }}
                         </label><br>
                     {% endfor %}
                 </div>
                 <div class="filter-group">
-                    <h3>Сортировка по рейтингу</h3>
+                    <h3>Сортировка</h3>
                     <select name="sort">
-                        <option value="desc" {% if request.form.get('sort') == 'desc' %}selected{% endif %}>От лучшего к худшему</option>
-                        <option value="asc" {% if request.form.get('sort') == 'asc' %}selected{% endif %}>От худшего к лучшему</option>
+                        <option value="desc" {% if request.form.get('sort') == 'desc' %}selected{% endif %}>По убыванию рейтинга</option>
+                        <option value="asc" {% if request.form.get('sort') == 'asc' %}selected{% endif %}>По возрастанию рейтинга</option>
                     </select>
                 </div>
-                <button type="submit">Применить фильтры</button><br>
-                <br><button type="button" onclick="window.location.href='/movies'">Сбросить фильтры</button>
+                <button type="submit">Применить</button>
+                <button type="button" onclick="window.location.href='/movies'">Сбросить</button>
             </form>
-        
         </div>
 
         <div class="movies-list">
-            <h2>Результат на основе предпочтений</h2>
             {% for movie in movies %}
                 <div class="movie">
-                    <img src="{{ url_for('static', filename='images/' + movie[0] + '.jpg') }}" alt="{{ movie[0] }}">
-                    <h3>{{ movie[0] }}</h3>
-                    <p>Год: {{ movie[1] }}</p>
-                    <p>Жанр: {{ movie[2] }}</p>
-                    <p>Рейтинг: {{ movie[4] }}</p> 
-                    <p>Теги: {{ movie[3] }}</p> 
-                    <a href="{{ url_for('add_favorite', title=movie[0]) }}">Добавить в избранное</a>
+                    <img src="{{ url_for('static', filename='images/' + movie[1] + '.jpg') }}" alt="{{ movie[1] }}" onerror="this.src='{{ url_for('static', filename='images/default.jpg') }}'">
+                    <h3>{{ movie[1] }} ({{ movie[2] }})</h3>
+                    <p><strong>Рейтинг:</strong> {{ movie[3] or 'Нет оценки' }}</p>
+                    <p><strong>Жанры:</strong> {{ movie[5] or 'Не указаны' }}</p>
+                    <p><strong>Страны:</strong> {{ movie[6] or 'Не указаны' }}</p>
+                    <p><strong>Актеры:</strong> {{ movie[7] or 'Не указаны' }}</p>
+                    <p>{{ movie[4] or '' }}</p>
+                    
+                    {% if 'id' in session %}
+                        {% if movie[0] in favorites %}
+                            <a href="{{ url_for('remove_favorite', movie_id=movie[0]) }}">Удалить из избранного</a>
+                        {% else %}
+                            <a href="{{ url_for('add_favorite', movie_id=movie[0]) }}">Добавить в избранное</a>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if session.get('is_admin') %}
+                        <br><a href="#" style="color: red;">Редактировать</a>
+                    {% endif %}
                 </div>
             {% endfor %}
         </div>
-        
     </div>
     <footer>
         <p>&copy; 2025 Онлайн Кинотеатр</p>
