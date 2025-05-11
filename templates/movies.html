@@ -97,6 +97,26 @@
             background-color: #d9edf7;
             color: #31708f;
         }
+        .trailer-link {
+            display: inline-block;
+            background: #ff0000;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            text-decoration: none;
+        }
+
+        .trailer-link:hover {
+            background: #cc0000;
+        }
+
+        input[type="file"] {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -167,6 +187,16 @@
                     {% endfor %}
                 </div>
                 <div class="filter-group">
+                    <h3>Актеры</h3>
+                    {% for actor in actors %}
+                        <label>
+                            <input type="checkbox" name="actor" value="{{ actor[0] }}" 
+                                   {% if actor[0]|string in selected_actors %}checked{% endif %}>
+                            {{ actor[1] }}
+                        </label><br>
+                    {% endfor %}
+                </div>
+                <div class="filter-group">
                     <h3>Сортировка</h3>
                     <select name="sort">
                         <option value="desc" {% if request.form.get('sort') == 'desc' %}selected{% endif %}>По убыванию рейтинга</option>
@@ -181,7 +211,23 @@
         <div class="movies-list">
             {% for movie in movies %}
                 <div class="movie">
-                    <img src="{{ url_for('static', filename='images/' + movie[1] + '.jpg') }}" alt="{{ movie[1] }}" onerror="this.src='{{ url_for('static', filename='images/default.jpg') }}'">
+                    {% if movie.image_path %}
+                    <img src="{{ url_for('static', filename=movie.image_path) }}" alt="{{ movie.title }}">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/default.png') }}" alt="Default image">
+                    {% endif %}
+                    
+                    
+                    
+                    {% if movie.trailer_url %}
+                        <a href="{{ movie.trailer_url }}" target="_blank" class="trailer-link">Смотреть трейлер</a>
+                    {% else %}
+                        <p>Трейлер отсутствует.</p>
+                    {% endif %}
+
+                    
+
+                    
                     <h3>{{ movie[1] }} ({{ movie[2] }})</h3>
                     <p><strong>Рейтинг:</strong> {{ movie[3] or 'Нет оценки' }}</p>
                     <p><strong>Жанры:</strong> {{ movie[5] or 'Не указаны' }}</p>
@@ -197,9 +243,6 @@
                         {% endif %}
                     {% endif %}
                     
-                    {% if session.get('is_admin') %}
-                        <br><a href="#" style="color: red;">Редактировать</a>
-                    {% endif %}
                 </div>
             {% endfor %}
         </div>

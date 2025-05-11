@@ -58,6 +58,27 @@
             margin: 20px 0;
             border-radius: 5px;
         }
+
+        .trailer-link {
+            display: inline-block;
+            background: #ff0000;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            text-decoration: none;
+        }
+
+        .trailer-link:hover {
+            background: #cc0000;
+        }
+
+        input[type="file"] {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -92,7 +113,17 @@
             {% else %}
                 {% for movie in favorites %}
                     <div class="movie">
-                        <img src="{{ url_for('static', filename='images/' + movie[1] + '.jpg') }}" alt="{{ movie[1] }}" onerror="this.src='{{ url_for('static', filename='images/default.jpg') }}'">
+                        {% if movie.image_path %}
+                        <img src="{{ url_for('static', filename=movie.image_path) }}" alt="{{ movie.title }}">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='images/default.png') }}" alt="Default image">
+                        {% endif %}
+                    
+                        
+                        {% if movie.trailer_url %}
+                        <a href="{{ movie.trailer_url }}" target="_blank" class="trailer-link">Смотреть трейлер</a>
+                        {% endif %}
+                        
                         <div class="movie-info">
                             <h3>{{ movie[1] }} ({{ movie[2] }})</h3>
                             <p><strong>Рейтинг:</strong> {{ movie[3] or 'Нет оценки' }}</p>

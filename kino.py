@@ -3,6 +3,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import psycopg2
 from psycopg2 import sql
 from datetime import datetime
+from werkzeug.utils import secure_filename
+import os
+
 
 
 
@@ -31,37 +34,105 @@ def movies():
     conn = dbConnect()
     cur = conn.cursor()
 
-    # Получаем параметры сортировки и поиска
+    # Получаем параметры
     sort_order = request.form.get('sort', 'desc')
     search_query = request.form.get('search', '')
-
-    # Безопасная проверка сортировки
+    
     if sort_order not in ['asc', 'desc']:
         sort_order = 'desc'
 
-    # Основной запрос для фильмов
+    # Основной запрос
     query = """
-    SELECT m.id, m.title, m.year, m.rating, m.description, 
-           STRING_AGG(g.name, ', ') AS genres,
-           STRING_AGG(c.name, ', ') AS countries,
-           STRING_AGG(a.name, ', ') AS actors
+    SELECT m.id, m.title, m.year, m.rating, m.description,
+           (
+               SELECT STRING_AGG(g.name, ', ')
+               FROM movie_genres mg
+               JOIN genres g ON mg.genre_id = g.id
+               WHERE mg.movie_id = m.id
+           ) AS genres,
+           (
+               SELECT STRING_AGG(c.name, ', ')
+               FROM movie_countries mc
+               JOIN countries c ON mc.country_id = c.id
+               WHERE mc.movie_id = m.id
+           ) AS countries,
+           (
+               SELECT STRING_AGG(a.name, ', ')
+               FROM movie_actors ma
+               JOIN actors a ON ma.actor_id = a.id
+               WHERE ma.movie_id = m.id
+           ) AS actors
     FROM movies m
-    LEFT JOIN movie_genres mg ON m.id = mg.movie_id
-    LEFT JOIN genres g ON mg.genre_id = g.id
-    LEFT JOIN movie_countries mc ON m.id = mc.movie_id
-    LEFT JOIN countries c ON mc.country_id = c.id
-    LEFT JOIN movie_actors ma ON m.id = ma.movie_id
-    LEFT JOIN actors a ON ma.actor_id = a.id
     """
     
-    # Добавляем условие поиска
-    if search_query:
-        query += " WHERE m.title ILIKE %s"
-        params = ['%' + search_query + '%']
-    else:
-        params = []
+    params = []
+    where_clauses = []
     
-    query += " GROUP BY m.id, m.title, m.year, m.rating, m.description"
+    if search_query:
+        where_clauses.append("m.title ILIKE %s")
+        params.append(f'%{search_query}%')
+    
+    # Добавляем условия фильтрации
+    selected_years = request.form.getlist('year')
+    selected_genres = request.form.getlist('genre')
+    selected_countries = request.form.getlist('country')
+    selected_actors = request.form.getlist('actor')
+
+    if selected_genres:
+        genre_ids = []
+        for genre in selected_genres:
+            cur.execute("SELECT id FROM genres WHERE name = %s;", (genre,))
+            result = cur.fetchone()
+            if result:
+                genre_ids.append(result[0])
+
+        if genre_ids:
+            where_clauses.append("""
+            EXISTS (
+                SELECT 1 FROM movie_genres mg 
+                WHERE mg.movie_id = m.id AND mg.genre_id IN %s
+            )
+            """)
+            params.append(tuple(genre_ids))
+
+    
+    if selected_years:
+        where_clauses.append("m.year IN %s")
+        params.append(tuple(selected_years))
+    
+    
+    # Получаем идентификаторы стран по названиям
+    if selected_countries:
+        country_ids = []
+        for country in selected_countries:
+            cur.execute("SELECT id FROM countries WHERE name = %s;", (country,))
+            result = cur.fetchone()
+            if result:
+                country_ids.append(result[0])  # Добавляем идентификатор в список
+
+        if country_ids:
+            where_clauses.append("""
+            EXISTS (
+                SELECT 1 FROM movie_countries mc 
+                WHERE mc.movie_id = m.id AND mc.country_id IN %s
+            )
+            """)
+            params.append(tuple(country_ids))  # Используем идентификаторы
+
+    
+    if selected_actors:
+        where_clauses.append("""
+        EXISTS (
+            SELECT 1 FROM movie_actors ma 
+            JOIN actors a ON ma.actor_id = a.id 
+            WHERE ma.movie_id = m.id AND a.id IN %s
+        )
+        """)
+        params.append(tuple(selected_actors))
+    
+    if where_clauses:
+        query += " WHERE " + " AND ".join(where_clauses)
+    
     query += f" ORDER BY m.rating {sort_order};"
     
     cur.execute(query, params)
@@ -80,43 +151,24 @@ def movies():
     cur.execute("SELECT id, name FROM actors ORDER BY name;")
     actors = cur.fetchall()
 
-    # Применяем фильтры
-    filtered_movies = movies
-    selected_years = request.form.getlist('year')
-    selected_genres = request.form.getlist('genre')
-    selected_countries = request.form.getlist('country')
-
-    if request.method == 'POST':
-        filtered_movies = []
-        for movie in movies:
-            # Получаем жанры и страны для текущего фильма
-            movie_genres = movie[5].split(', ') if movie[5] else []
-            movie_countries = movie[6].split(', ') if movie[6] else []
-            
-            # Проверяем соответствие фильтров
-            year_match = not selected_years or str(movie[2]) in selected_years
-            genre_match = not selected_genres or any(g in movie_genres for g in selected_genres)
-            country_match = not selected_countries or any(c in movie_countries for c in selected_countries)
-            
-            if year_match and genre_match and country_match:
-                filtered_movies.append(movie)
-
-    # Проверяем, есть ли у пользователя избранные фильмы
+    # Проверяем избранное
     favorites = []
     if 'id' in session:
         cur.execute("SELECT movie_id FROM favorites WHERE user_id = %s;", (session['id'],))
         favorites = [row[0] for row in cur.fetchall()]
 
     dbClose(cur, conn)
+    
     return render_template('movies.html', 
-                         movies=filtered_movies, 
+                         movies=movies, 
                          years=years, 
                          genres=genres, 
                          countries=countries,
                          actors=actors,
-                         selected_years=selected_years, 
-                         selected_genres=selected_genres, 
+                         selected_years=selected_years,
+                         selected_genres=selected_genres,
                          selected_countries=selected_countries,
+                         selected_actors=selected_actors,
                          favorites=favorites)
 
 @app.route('/add_favorite/<int:movie_id>')
@@ -164,17 +216,22 @@ def izbr():
     cur = conn.cursor()
 
     query = """
-    SELECT m.id, m.title, m.year, m.rating, m.description, 
-           STRING_AGG(g.name, ', ') AS genres,
-           STRING_AGG(c.name, ', ') AS countries
+    SELECT m.id, m.title, m.year, m.rating, m.description,
+        (
+            SELECT STRING_AGG(g.name, ', ')
+            FROM movie_genres mg
+            JOIN genres g ON mg.genre_id = g.id
+            WHERE mg.movie_id = m.id
+        ) AS genres,
+        (
+            SELECT STRING_AGG(c.name, ', ')
+            FROM movie_countries mc
+            JOIN countries c ON mc.country_id = c.id
+            WHERE mc.movie_id = m.id
+        ) AS countries
     FROM movies m
     JOIN favorites f ON m.id = f.movie_id
-    LEFT JOIN movie_genres mg ON m.id = mg.movie_id
-    LEFT JOIN genres g ON mg.genre_id = g.id
-    LEFT JOIN movie_countries mc ON m.id = mc.movie_id
-    LEFT JOIN countries c ON mc.country_id = c.id
     WHERE f.user_id = %s
-    GROUP BY m.id, m.title, m.year, m.rating, m.description
     ORDER BY m.title;
     """
     
@@ -280,37 +337,37 @@ def add_movie():
     conn = dbConnect()
     cur = conn.cursor()
 
-    # Инициализация переменных
-    existing_genres = []
-    existing_countries = []
-    existing_actors = []
+    # Получаем существующие данные для выпадающих списков
+    cur.execute("SELECT id, name FROM genres ORDER BY name;")
+    existing_genres = cur.fetchall()
 
-    try:
-        # Получаем существующие данные
-        cur.execute("SELECT id, name FROM genres ORDER BY name;")
-        existing_genres = cur.fetchall()
+    cur.execute("SELECT id, name FROM countries ORDER BY name;")
+    existing_countries = cur.fetchall()
 
-        cur.execute("SELECT id, name FROM countries ORDER BY name;")
-        existing_countries = cur.fetchall()
+    cur.execute("SELECT id, name FROM actors ORDER BY name;")
+    existing_actors = cur.fetchall()
 
-        cur.execute("SELECT id, name FROM actors ORDER BY name;")
-        existing_actors = cur.fetchall()
-
-        if request.method == 'POST':
+    if request.method == 'POST':
+        try:
+            # Основные данные фильма
             title = request.form.get('title')
             year = request.form.get('year')
             rating = request.form.get('rating')
             description = request.form.get('description')
+            trailer_url = request.form.get('trailer_url')
+            
 
+            # Новые жанры, страны и актеры
             new_genres = [g.strip() for g in request.form.get('new_genres', '').split(',') if g.strip()]
             new_countries = [c.strip() for c in request.form.get('new_countries', '').split(',') if c.strip()]
             new_actors = [a.strip() for a in request.form.getlist('new_actors') if a.strip()]
-
+            
+            # Выбранные существующие элементы
             selected_genres = request.form.getlist('genres')
             selected_countries = request.form.getlist('countries')
             selected_actors = request.form.getlist('actors')
 
-            # Добавляем новые элементы
+            # Добавляем новые жанры
             genre_ids = []
             for genre in new_genres:
                 cur.execute("SELECT id FROM genres WHERE name = %s;", (genre,))
@@ -320,6 +377,7 @@ def add_movie():
                     cur.execute("INSERT INTO genres (name) VALUES (%s) RETURNING id;", (genre,))
                     genre_ids.append(cur.fetchone()[0])
 
+            # Добавляем новые страны
             country_ids = []
             for country in new_countries:
                 cur.execute("SELECT id FROM countries WHERE name = %s;", (country,))
@@ -329,6 +387,7 @@ def add_movie():
                     cur.execute("INSERT INTO countries (name) VALUES (%s) RETURNING id;", (country,))
                     country_ids.append(cur.fetchone()[0])
 
+            # Добавляем новых актеров
             actor_ids = []
             for actor in new_actors:
                 cur.execute("SELECT id FROM actors WHERE name = %s;", (actor,))
@@ -338,51 +397,67 @@ def add_movie():
                     cur.execute("INSERT INTO actors (name) VALUES (%s) RETURNING id;", (actor,))
                     actor_ids.append(cur.fetchone()[0])
 
-            # Добавляем фильм
+            # Добавляем фильм с изображением и трейлером
             cur.execute("""
-                INSERT INTO movies (title, year, rating, description) 
-                VALUES (%s, %s, %s, %s) 
+                INSERT INTO movies 
+                (title, year, rating, description, image_path, trailer_url) 
+                VALUES (%s, %s, %s, %s, %s, %s) 
                 RETURNING id;
-            """, (title, year, rating or None, description or None))
-            movie_id = cur.fetchone()[0]
+            """, (title, year, rating or None, description or None, image_path, trailer_url or None))
 
-            # Связываем фильм с элементами
+
+            # Связываем фильм с жанрами
             for genre_id in genre_ids + selected_genres:
                 try:
-                    cur.execute("INSERT INTO movie_genres (movie_id, genre_id) VALUES (%s, %s);",
-                               (movie_id, genre_id))
-                except psycopg2.IntegrityError:
+                    cur.execute("""
+                        INSERT INTO movie_genres (movie_id, genre_id) 
+                        VALUES (%s, %s)
+                        ON CONFLICT DO NOTHING;
+                    """, ( genre_id))
+                except Exception as e:
                     conn.rollback()
+                    app.logger.error(f"Error adding genre: {e}")
 
+            # Связываем фильм со странами
             for country_id in country_ids + selected_countries:
                 try:
-                    cur.execute("INSERT INTO movie_countries (movie_id, country_id) VALUES (%s, %s);",
-                               (movie_id, country_id))
-                except psycopg2.IntegrityError:
+                    cur.execute("""
+                        INSERT INTO movie_countries (movie_id, country_id) 
+                        VALUES (%s, %s)
+                        ON CONFLICT DO NOTHING;
+                    """, ( country_id))
+                except Exception as e:
                     conn.rollback()
+                    app.logger.error(f"Error adding country: {e}")
 
+            # Связываем фильм с актерами
             for actor_id in actor_ids + selected_actors:
                 try:
-                    cur.execute("INSERT INTO movie_actors (movie_id, actor_id) VALUES (%s, %s);",
-                               (movie_id, actor_id))
-                except psycopg2.IntegrityError:
+                    cur.execute("""
+                        INSERT INTO movie_actors (movie_id, actor_id) 
+                        VALUES (%s, %s)
+                        ON CONFLICT DO NOTHING;
+                    """, ( actor_id))
+                except Exception as e:
                     conn.rollback()
+                    app.logger.error(f"Error adding actor: {e}")
 
             conn.commit()
-            flash('Фильм и связанные данные успешно добавлены', 'success')
-            return redirect('/movies')
+            flash('Фильм успешно добавлен', 'success')
+            return redirect(url_for('movies'))
 
-    except Exception as e:
-        conn.rollback()
-        flash(f'Ошибка при добавлении: {str(e)}', 'danger')
-    finally:
-        dbClose(cur, conn)
+        except Exception as e:
+            conn.rollback()
+            flash(f'Ошибка при добавлении фильма: {str(e)}', 'danger')
+            app.logger.error(f"Error in add_movie: {str(e)}")
+        finally:
+            dbClose(cur, conn)
 
     return render_template('add_movie.html',
-                           genres=existing_genres,
-                           countries=existing_countries,
-                           actors=existing_actors,
-                           current_year=datetime.now().year)
+                         genres=existing_genres,
+                         countries=existing_countries,
+                         actors=existing_actors,
+                         current_year=datetime.now().year)
 
 if __name__ == '__main__':
     app.run(debug=True)
