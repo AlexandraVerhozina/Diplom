@@ -113,15 +113,16 @@
             {% else %}
                 {% for movie in favorites %}
                     <div class="movie">
-                        {% if movie.image_path %}
-                        <img src="{{ url_for('static', filename=movie.image_path) }}" alt="{{ movie.title }}">
+                        {% if movie[5] %}
+                            <img src="{{ url_for('static', filename='images/' + movie[1] + '.jpg') }}" alt="{{ movie[1] }}">
                         {% else %}
-                        <img src="{{ url_for('static', filename='images/default.png') }}" alt="Default image">
+                            <img src="{{ url_for('static', filename='images/default.png') }}" alt="Default image">
                         {% endif %}
-                    
                         
-                        {% if movie.trailer_url %}
-                        <a href="{{ movie.trailer_url }}" target="_blank" class="trailer-link">Смотреть трейлер</a>
+                        {% if movie[6] %}
+                            <a href="{{ movie[4] }}" target="_blank" class="trailer-link">Смотреть трейлер</a>
+                        {% else %}
+                            <p>Трейлер отсутствует.</p>
                         {% endif %}
                         
                         <div class="movie-info">

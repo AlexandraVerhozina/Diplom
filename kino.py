@@ -5,12 +5,18 @@ from psycopg2 import sql
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
+from PIL import Image
 
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'jfif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 
 app = Flask(__name__)
 app.secret_key = '55555'
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 
 def dbConnect(): 
     conn = psycopg2.connect( 
@@ -71,6 +77,56 @@ def movies():
     if search_query:
         where_clauses.append("m.title ILIKE %s")
         params.append(f'%{search_query}%')
+    
+    # Учет предпочтений пользователя
+    if 'id' in session:
+        user_id = session['id']
+        
+        # Минимальный рейтинг
+        cur.execute("SELECT min_rating FROM users WHERE id = %s;", (user_id,))
+        min_rating = cur.fetchone()[0]
+        if min_rating:
+            where_clauses.append("m.rating >= %s")
+            params.append(min_rating)
+        
+        # Исключаем нелюбимые жанры
+        cur.execute("SELECT genre FROM user_genres WHERE user_id = %s AND is_favorite = FALSE;", (user_id,))
+        disliked_genres = [row[0] for row in cur.fetchall()]
+        if disliked_genres:
+            where_clauses.append("""
+            NOT EXISTS (
+                SELECT 1 FROM movie_genres mg 
+                JOIN genres g ON mg.genre_id = g.id
+                WHERE mg.movie_id = m.id AND g.name IN %s
+            )
+            """)
+            params.append(tuple(disliked_genres))
+        
+        # Исключаем нелюбимые страны
+        cur.execute("SELECT country FROM user_countries WHERE user_id = %s AND is_favorite = FALSE;", (user_id,))
+        disliked_countries = [row[0] for row in cur.fetchall()]
+        if disliked_countries:
+            where_clauses.append("""
+            NOT EXISTS (
+                SELECT 1 FROM movie_countries mc 
+                JOIN countries c ON mc.country_id = c.id
+                WHERE mc.movie_id = m.id AND c.name IN %s
+            )
+            """)
+            params.append(tuple(disliked_countries))
+        
+        # Исключаем нелюбимых актеров
+        cur.execute("SELECT actor FROM user_actors WHERE user_id = %s AND is_favorite = FALSE;", (user_id,))
+        disliked_actors = [row[0] for row in cur.fetchall()]
+        if disliked_actors:
+            where_clauses.append("""
+            NOT EXISTS (
+                SELECT 1 FROM movie_actors ma 
+                JOIN actors a ON ma.actor_id = a.id
+                WHERE ma.movie_id = m.id AND a.name IN %s
+            )
+            """)
+            params.append(tuple(disliked_actors))
     
     # Добавляем условия фильтрации
     selected_years = request.form.getlist('year')
@@ -309,7 +365,7 @@ def register():
 
     return render_template('register.html', error=error)
 
-@app.route('/user')
+@app.route('/user', methods=['GET', 'POST'])
 def user():
     if 'id' not in session:
         return redirect('/login')
@@ -317,11 +373,92 @@ def user():
     conn = dbConnect()
     cur = conn.cursor()
 
-    cur.execute("SELECT username FROM users WHERE id = %s;", (session['id'],))
+    if request.method == 'POST':
+        try:
+            user_id = session['id']
+            
+            # Обработка предпочтений
+            favorite_genres = request.form.getlist('favorite_genres')
+            disliked_genres = request.form.getlist('disliked_genres')
+            favorite_countries = request.form.getlist('favorite_countries')
+            disliked_countries = request.form.getlist('disliked_countries')
+            favorite_actors = request.form.getlist('favorite_actors')
+            disliked_actors = request.form.getlist('disliked_actors')
+            min_rating = request.form.get('min_rating')
+
+            # Обновляем предпочтения по жанрам
+            cur.execute("DELETE FROM user_genres WHERE user_id = %s;", (user_id,))
+            for genre in favorite_genres:
+                cur.execute("INSERT INTO user_genres (user_id, genre, is_favorite) VALUES (%s, %s, TRUE);", 
+                          (user_id, genre))
+            for genre in disliked_genres:
+                cur.execute("INSERT INTO user_genres (user_id, genre, is_favorite) VALUES (%s, %s, FALSE);", 
+                          (user_id, genre))
+
+            # Обновляем предпочтения по странам
+            cur.execute("DELETE FROM user_countries WHERE user_id = %s;", (user_id,))
+            for country in favorite_countries:
+                cur.execute("INSERT INTO user_countries (user_id, country, is_favorite) VALUES (%s, %s, TRUE);", 
+                          (user_id, country))
+            for country in disliked_countries:
+                cur.execute("INSERT INTO user_countries (user_id, country, is_favorite) VALUES (%s, %s, FALSE);", 
+                          (user_id, country))
+
+            # Обновляем предпочтения по актерам
+            cur.execute("DELETE FROM user_actors WHERE user_id = %s;", (user_id,))
+            for actor in favorite_actors:
+                cur.execute("INSERT INTO user_actors (user_id, actor, is_favorite) VALUES (%s, %s, TRUE);", 
+                          (user_id, actor))
+            for actor in disliked_actors:
+                cur.execute("INSERT INTO user_actors (user_id, actor, is_favorite) VALUES (%s, %s, FALSE);", 
+                          (user_id, actor))
+
+            # Обновляем минимальный рейтинг
+            cur.execute("UPDATE users SET min_rating = %s WHERE id = %s;", (min_rating, user_id))
+
+            conn.commit()
+            flash('Ваши предпочтения успешно сохранены!', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash(f'Ошибка при сохранении предпочтений: {str(e)}', 'danger')
+        finally:
+            dbClose(cur, conn)
+            return redirect(url_for('user'))
+
+    # Получаем данные пользователя
+    cur.execute("SELECT id, username, min_rating FROM users WHERE id = %s;", (session['id'],))
     user = cur.fetchone()
 
+    # Получаем все доступные жанры, страны и актеров
+    cur.execute("SELECT name FROM genres ORDER BY name;")
+    genres = [row[0] for row in cur.fetchall()]
+
+    cur.execute("SELECT name FROM countries ORDER BY name;")
+    countries = [row[0] for row in cur.fetchall()]
+
+    cur.execute("SELECT name FROM actors ORDER BY name;")
+    actors = [row[0] for row in cur.fetchall()]
+
+    # Получаем текущие предпочтения пользователя
+    cur.execute("SELECT genre, is_favorite FROM user_genres WHERE user_id = %s;", (session['id'],))
+    genre_prefs = {row[0]: row[1] for row in cur.fetchall()}
+
+    cur.execute("SELECT country, is_favorite FROM user_countries WHERE user_id = %s;", (session['id'],))
+    country_prefs = {row[0]: row[1] for row in cur.fetchall()}
+
+    cur.execute("SELECT actor, is_favorite FROM user_actors WHERE user_id = %s;", (session['id'],))
+    actor_prefs = {row[0]: row[1] for row in cur.fetchall()}
+
     dbClose(cur, conn)
-    return render_template('user.html', user=user)
+
+    return render_template('user.html', 
+                         user=user,
+                         genres=genres,
+                         countries=countries,
+                         actors=actors,
+                         genre_prefs=genre_prefs,
+                         country_prefs=country_prefs,
+                         actor_prefs=actor_prefs)
 
 @app.route('/logout')
 def logout():
@@ -349,13 +486,38 @@ def add_movie():
 
     if request.method == 'POST':
         try:
-            # Основные данные фильма
             title = request.form.get('title')
             year = request.form.get('year')
             rating = request.form.get('rating')
             description = request.form.get('description')
             trailer_url = request.form.get('trailer_url')
-            
+
+            image_path = None
+            if 'image' in request.files:
+                file = request.files['image']
+                if file and allowed_file(file.filename):
+                    try:
+                        img = Image.open(file)
+                        img.verify()  # Проверяем, является ли файл допустимым изображением
+                    except Exception:
+                        flash('Файл не является допустимым изображением', 'danger')
+                        return redirect(request.referrer or url_for('add_movie'))
+                    # Получаем расширение файла
+                    filename, file_extension = os.path.splitext(secure_filename(file.filename))
+                    file_extension = file_extension.lower()  # Приводим к нижнему регистру
+                    
+                    # Проверяем, что расширение допустимо
+                    if file_extension not in ALLOWED_EXTENSIONS:
+                        flash('Недопустимый формат файла', 'danger')
+                        return redirect(request.referrer or url_for('add_movie'))
+
+                    # Создаем уникальное имя файла
+                    unique_filename = f"{int(datetime.now().timestamp())}{file_extension}"
+                    save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+                    file.save(save_path)
+                    image_path = os.path.join('uploads', unique_filename)
+
 
             # Новые жанры, страны и актеры
             new_genres = [g.strip() for g in request.form.get('new_genres', '').split(',') if g.strip()]
@@ -404,7 +566,7 @@ def add_movie():
                 VALUES (%s, %s, %s, %s, %s, %s) 
                 RETURNING id;
             """, (title, year, rating or None, description or None, image_path, trailer_url or None))
-
+            movie_id = cur.fetchone()[0]
 
             # Связываем фильм с жанрами
             for genre_id in genre_ids + selected_genres:
@@ -413,7 +575,7 @@ def add_movie():
                         INSERT INTO movie_genres (movie_id, genre_id) 
                         VALUES (%s, %s)
                         ON CONFLICT DO NOTHING;
-                    """, ( genre_id))
+                    """, (movie_id, genre_id))
                 except Exception as e:
                     conn.rollback()
                     app.logger.error(f"Error adding genre: {e}")
@@ -425,7 +587,7 @@ def add_movie():
                         INSERT INTO movie_countries (movie_id, country_id) 
                         VALUES (%s, %s)
                         ON CONFLICT DO NOTHING;
-                    """, ( country_id))
+                    """, (movie_id, country_id))
                 except Exception as e:
                     conn.rollback()
                     app.logger.error(f"Error adding country: {e}")
@@ -437,7 +599,7 @@ def add_movie():
                         INSERT INTO movie_actors (movie_id, actor_id) 
                         VALUES (%s, %s)
                         ON CONFLICT DO NOTHING;
-                    """, ( actor_id))
+                    """, (movie_id, actor_id))
                 except Exception as e:
                     conn.rollback()
                     app.logger.error(f"Error adding actor: {e}")
@@ -458,6 +620,7 @@ def add_movie():
                          countries=existing_countries,
                          actors=existing_actors,
                          current_year=datetime.now().year)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -18,16 +18,55 @@
             text-align: center;
         }
         .container {
-            max-width: 800px;
-            margin: auto;
+            max-width: 1200px;
+            margin: 20px auto;
             padding: 20px;
             background: #fff;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            
         }
-        img {
-            max-width: 150px;
-            border-radius: 50%;
+        .preferences-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .preferences-columns {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .preferences-column {
+            flex: 1;
+        }
+        .preferences-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        .rating-selector {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .rating-selector label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .rating-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .rating-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
         }
         nav {
             margin: 20px 0;
@@ -42,9 +81,18 @@
             padding: 20px;
             background: #333;
             color: #fff;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
+        }
+        .save-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .save-btn:hover {
+            background: #45a049;
         }
     </style>
 </head>
@@ -52,11 +100,10 @@
     <header>
         <h1>Профиль пользователя</h1>
         <nav>
-
             <a href="/movies">Фильмы</a>
             <a href="/izbr">Избранное</a>
             {% if 'username' in session %}
-                <a href="/user">{{ session['username'] }}</a> 
+                <a href="/user">{{ session['username'] }}</a>
                 <a href="/logout">Выход</a>
             {% else %}
                 <a href="/login">Вход</a>
@@ -64,34 +111,129 @@
             {% endif %}
         </nav>
     </header>
+
     <div class="container">
-        {% if user %}
-            <h2>{{ user[0] }}</h2>
-            <img src="{{ url_for('static', filename='images/' + user[0] + '.jpg') }}" alt="{{ user[0] }}">
-            
-            <h3>Предпочтительные жанры</h3>
-            <form method="POST">
-                <label>
-                    <input type="checkbox" name="genres" value="драма" {% if user[3] and 'драма' in user_info[3] %}checked{% endif %}> Драма
-                </label><br>
-                <label>
-                    <input type="checkbox" name="genres" value="комедия" {% if user[3] and 'комедия' in user_info[3] %}checked{% endif %}> Комедия
-                </label><br>
-                <label>
-                    <input type="checkbox" name="genres" value="боевик" {% if user[3] and 'боевик' in user_info[3] %}checked{% endif %}> Боевик
-                </label><br>
-                <label>
-                    <input type="checkbox" name="genres" value="ужасы" {% if user[3] and 'ужасы' in user_info[3] %}checked{% endif %}> Ужасы
-                </label><br>
-                
-                <button type="submit">Сохранить предпочтения</button>
-            </form>
-        {% else %}
-            <p>Пользователь не найден.</p>
-        {% endif %}
+        <h2>{{ user[1] }}</h2>
+
+        <div class="rating-selector">
+            <h3>Минимальный рейтинг фильмов</h3>
+            <label for="min_rating">Показывать фильмы с рейтингом не ниже:</label>
+            <input type="range" id="min_rating" name="min_rating" min="0" max="10" step="0.1" 
+                   value="{{ user[2] if user[2] else 5 }}" class="rating-slider">
+            <span class="rating-value">{{ user[2] if user[2] else 5 }}</span>/10
+        </div>
+
+        <form method="POST">
+            <div class="preferences-section">
+                <h3>Предпочтения по жанрам</h3>
+                <div class="preferences-columns">
+                    <div class="preferences-column">
+                        <h4>Любимые жанры</h4>
+                        <div class="preferences-list">
+                            {% for genre in genres %}
+                                <label>
+                                    <input type="checkbox" name="favorite_genres" value="{{ genre }}"
+                                           {% if genre in genre_prefs and genre_prefs[genre] %}checked{% endif %}>
+                                    {{ genre }}
+                                </label><br>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="preferences-column">
+                        <h4>Нелюбимые жанры</h4>
+                        <div class="preferences-list">
+                            {% for genre in genres %}
+                                <label>
+                                    <input type="checkbox" name="disliked_genres" value="{{ genre }}"
+                                           {% if genre in genre_prefs and not genre_prefs[genre] %}checked{% endif %}>
+                                    {{ genre }}
+                                </label><br>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preferences-section">
+                <h3>Предпочтения по странам</h3>
+                <div class="preferences-columns">
+                    <div class="preferences-column">
+                        <h4>Любимые страны</h4>
+                        <div class="preferences-list">
+                            {% for country in countries %}
+                                <label>
+                                    <input type="checkbox" name="favorite_countries" value="{{ country }}"
+                                           {% if country in country_prefs and country_prefs[country] %}checked{% endif %}>
+                                    {{ country }}
+                                </label><br>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="preferences-column">
+                        <h4>Нелюбимые страны</h4>
+                        <div class="preferences-list">
+                            {% for country in countries %}
+                                <label>
+                                    <input type="checkbox" name="disliked_countries" value="{{ country }}"
+                                           {% if country in country_prefs and not country_prefs[country] %}checked{% endif %}>
+                                    {{ country }}
+                                </label><br>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preferences-section">
+                <h3>Предпочтения по актерам</h3>
+                <div class="preferences-columns">
+                    <div class="preferences-column">
+                        <h4>Любимые актеры</h4>
+                        <div class="preferences-list">
+                            {% for actor in actors %}
+                                <label>
+                                    <input type="checkbox" name="favorite_actors" value="{{ actor }}"
+                                           {% if actor in actor_prefs and actor_prefs[actor] %}checked{% endif %}>
+                                    {{ actor }}
+                                </label><br>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="preferences-column">
+                        <h4>Нелюбимые актеры</h4>
+                        <div class="preferences-list">
+                            {% for actor in actors %}
+                                <label>
+                                    <input type="checkbox" name="disliked_actors" value="{{ actor }}"
+                                           {% if actor in actor_prefs and not actor_prefs[actor] %}checked{% endif %}>
+                                    {{ actor }}
+                                </label><br>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="hidden" id="min_rating_value" name="min_rating" value="{{ user[2] if user[2] else 5 }}">
+            <button type="submit" class="save-btn">Сохранить предпочтения</button>
+        </form>
     </div>
+
     <footer>
         <p>&copy; 2025 Онлайн Кинотеатр</p>
     </footer>
+
+    <script>
+        // Обновление значения рейтинга при перемещении ползунка
+        const ratingSlider = document.getElementById('min_rating');
+        const ratingValue = document.querySelector('.rating-value');
+        const ratingHidden = document.getElementById('min_rating_value');
+        
+        ratingSlider.addEventListener('input', function() {
+            const value = parseFloat(this.value).toFixed(1);
+            ratingValue.textContent = value;
+            ratingHidden.value = value;
+        });
+    </script>
 </body>
 </html>
