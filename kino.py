@@ -1,13 +1,12 @@
 from flask import Flask, render_template, request, redirect, session, flash, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 import psycopg2
-from psycopg2 import sql
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
-from PIL import Image
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'jfif'}
+
+ALLOWED_EXTENSIONS = {'jpg'}  
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -49,32 +48,31 @@ def movies():
 
     # Основной запрос
     query = """
-    SELECT m.id, m.title, m.year, m.rating, m.description,
-       (
-           SELECT STRING_AGG(g.name, ', ')
-           FROM movie_genres mg
-           JOIN genres g ON mg.genre_id = g.id
-           WHERE mg.movie_id = m.id
-       ) AS genres,
-       (
-           SELECT STRING_AGG(c.name, ', ')
-           FROM movie_countries mc
-           JOIN countries c ON mc.country_id = c.id
-           WHERE mc.movie_id = m.id
-       ) AS countries,
-       (
-           SELECT STRING_AGG(a.name, ', ')
-           FROM movie_actors ma
-           JOIN actors a ON ma.actor_id = a.id
-           WHERE ma.movie_id = m.id
-       ) AS actors,
-       (
-           SELECT STRING_AGG(t.trailer_url, ', ')
-           FROM trailers t
-           WHERE t.movie_id = m.id
-       ) AS trailers
+    SELECT m.id, m.title, m.year, m.rating, m.description, m.image_path,
+        (
+            SELECT STRING_AGG(g.name, ', ')
+            FROM movie_genres mg
+            JOIN genres g ON mg.genre_id = g.id
+            WHERE mg.movie_id = m.id
+        ) AS genres,
+        (
+            SELECT STRING_AGG(c.name, ', ')
+            FROM movie_countries mc
+            JOIN countries c ON mc.country_id = c.id
+            WHERE mc.movie_id = m.id
+        ) AS countries,
+        (
+            SELECT STRING_AGG(a.name, ', ')
+            FROM movie_actors ma
+            JOIN actors a ON ma.actor_id = a.id
+            WHERE ma.movie_id = m.id
+        ) AS actors,
+        (
+            SELECT STRING_AGG(t.trailer_url, ', ')
+            FROM trailers t
+            WHERE t.movie_id = m.id
+        ) AS trailers
     FROM movies m
-
     """
     
     params = []
@@ -327,7 +325,7 @@ def izbr():
     cur = conn.cursor()
 
     query = """
-    SELECT m.id, m.title, m.year, m.rating, m.description,
+    SELECT m.id, m.title, m.year, m.rating, m.description, m.image_path,
         (
             SELECT STRING_AGG(g.name, ', ')
             FROM movie_genres mg
@@ -558,21 +556,26 @@ def add_movie():
                 file = request.files['image']
                 if file and allowed_file(file.filename):
                     # Получаем расширение файла
-                    filename, file_extension = os.path.splitext(secure_filename(file.filename))
-                    file_extension = file_extension.lower()  # Приводим к нижнему регистру
+                    file_extension = os.path.splitext(secure_filename(file.filename))[1].lower()
                     
-                    # Проверяем, что расширение допустимо
-                    if file_extension not in ALLOWED_EXTENSIONS:
-                        flash('Недопустимый формат файла', 'danger')
+                    # Проверяем, что расширение файла - только .jpg
+                    if file_extension != '.jpg':
+                        flash('Файл должен быть в формате .jpg', 'danger')
                         return redirect(request.referrer or url_for('add_movie'))
 
                     # Создаем уникальное имя файла
-                    unique_filename = f"{int(datetime.now().timestamp())}{file_extension}"
+                    unique_filename = f"{int(datetime.now().timestamp())}.jpg"
                     save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+                    
+                    # Сохраняем файл
                     file.save(save_path)
                     image_path = os.path.join('uploads', unique_filename)
 
+                    # Проверяем, что файл действительно сохранён
+                    if not os.path.exists(save_path):
+                        flash('Ошибка при сохранении файла', 'danger')
+                        return redirect(request.referrer or url_for('add_movie'))
 
             # Новые жанры, страны и актеры
             new_genres = [g.strip() for g in request.form.get('new_genres', '').split(',') if g.strip()]
@@ -630,7 +633,6 @@ def add_movie():
                     VALUES (%s, %s);
                 """, (movie_id, trailer_url))
 
-
             # Связываем фильм с жанрами
             for genre_id in genre_ids + selected_genres:
                 try:
@@ -683,6 +685,7 @@ def add_movie():
                          countries=existing_countries,
                          actors=existing_actors,
                          current_year=datetime.now().year)
+
 
 
 if __name__ == '__main__':
