@@ -50,25 +50,31 @@ def movies():
     # Основной запрос
     query = """
     SELECT m.id, m.title, m.year, m.rating, m.description,
-           (
-               SELECT STRING_AGG(g.name, ', ')
-               FROM movie_genres mg
-               JOIN genres g ON mg.genre_id = g.id
-               WHERE mg.movie_id = m.id
-           ) AS genres,
-           (
-               SELECT STRING_AGG(c.name, ', ')
-               FROM movie_countries mc
-               JOIN countries c ON mc.country_id = c.id
-               WHERE mc.movie_id = m.id
-           ) AS countries,
-           (
-               SELECT STRING_AGG(a.name, ', ')
-               FROM movie_actors ma
-               JOIN actors a ON ma.actor_id = a.id
-               WHERE ma.movie_id = m.id
-           ) AS actors
+       (
+           SELECT STRING_AGG(g.name, ', ')
+           FROM movie_genres mg
+           JOIN genres g ON mg.genre_id = g.id
+           WHERE mg.movie_id = m.id
+       ) AS genres,
+       (
+           SELECT STRING_AGG(c.name, ', ')
+           FROM movie_countries mc
+           JOIN countries c ON mc.country_id = c.id
+           WHERE mc.movie_id = m.id
+       ) AS countries,
+       (
+           SELECT STRING_AGG(a.name, ', ')
+           FROM movie_actors ma
+           JOIN actors a ON ma.actor_id = a.id
+           WHERE ma.movie_id = m.id
+       ) AS actors,
+       (
+           SELECT STRING_AGG(t.trailer_url, ', ')
+           FROM trailers t
+           WHERE t.movie_id = m.id
+       ) AS trailers
     FROM movies m
+
     """
     
     params = []
@@ -89,9 +95,66 @@ def movies():
             where_clauses.append("m.rating >= %s")
             params.append(min_rating)
         
-        # Исключаем нелюбимые жанры
+        # Получаем любимые и нелюбимые элементы
+        cur.execute("SELECT genre FROM user_genres WHERE user_id = %s AND is_favorite = TRUE;", (user_id,))
+        favorite_genres = [row[0] for row in cur.fetchall()]
+        
         cur.execute("SELECT genre FROM user_genres WHERE user_id = %s AND is_favorite = FALSE;", (user_id,))
         disliked_genres = [row[0] for row in cur.fetchall()]
+        
+        cur.execute("SELECT country FROM user_countries WHERE user_id = %s AND is_favorite = TRUE;", (user_id,))
+        favorite_countries = [row[0] for row in cur.fetchall()]
+        
+        cur.execute("SELECT country FROM user_countries WHERE user_id = %s AND is_favorite = FALSE;", (user_id,))
+        disliked_countries = [row[0] for row in cur.fetchall()]
+        
+        cur.execute("SELECT actor FROM user_actors WHERE user_id = %s AND is_favorite = TRUE;", (user_id,))
+        favorite_actors = [row[0] for row in cur.fetchall()]
+        
+        cur.execute("SELECT actor FROM user_actors WHERE user_id = %s AND is_favorite = FALSE;", (user_id,))
+        disliked_actors = [row[0] for row in cur.fetchall()]
+        
+        # Условия для показа фильмов:
+        # Фильм должен иметь хотя бы один любимый жанр, страну или актера
+        # И не должен иметь ни одного нелюбимого жанра, страны или актера
+        
+        # Собираем условия для любимых элементов
+        favorite_conditions = []
+        if favorite_genres:
+            favorite_conditions.append("""
+            EXISTS (
+                SELECT 1 FROM movie_genres mg 
+                JOIN genres g ON mg.genre_id = g.id
+                WHERE mg.movie_id = m.id AND g.name IN %s
+            )
+            """)
+            params.append(tuple(favorite_genres))
+        
+        if favorite_countries:
+            favorite_conditions.append("""
+            EXISTS (
+                SELECT 1 FROM movie_countries mc 
+                JOIN countries c ON mc.country_id = c.id
+                WHERE mc.movie_id = m.id AND c.name IN %s
+            )
+            """)
+            params.append(tuple(favorite_countries))
+        
+        if favorite_actors:
+            favorite_conditions.append("""
+            EXISTS (
+                SELECT 1 FROM movie_actors ma 
+                JOIN actors a ON ma.actor_id = a.id
+                WHERE ma.movie_id = m.id AND a.name IN %s
+            )
+            """)
+            params.append(tuple(favorite_actors))
+        
+        # Если есть хотя бы одно условие для любимых элементов
+        if favorite_conditions:
+            where_clauses.append("(" + " OR ".join(favorite_conditions) + ")")
+        
+        # Условия для исключения нелюбимых элементов
         if disliked_genres:
             where_clauses.append("""
             NOT EXISTS (
@@ -102,9 +165,6 @@ def movies():
             """)
             params.append(tuple(disliked_genres))
         
-        # Исключаем нелюбимые страны
-        cur.execute("SELECT country FROM user_countries WHERE user_id = %s AND is_favorite = FALSE;", (user_id,))
-        disliked_countries = [row[0] for row in cur.fetchall()]
         if disliked_countries:
             where_clauses.append("""
             NOT EXISTS (
@@ -115,9 +175,6 @@ def movies():
             """)
             params.append(tuple(disliked_countries))
         
-        # Исключаем нелюбимых актеров
-        cur.execute("SELECT actor FROM user_actors WHERE user_id = %s AND is_favorite = FALSE;", (user_id,))
-        disliked_actors = [row[0] for row in cur.fetchall()]
         if disliked_actors:
             where_clauses.append("""
             NOT EXISTS (
@@ -157,14 +214,13 @@ def movies():
         params.append(tuple(selected_years))
     
     
-    # Получаем идентификаторы стран по названиям
     if selected_countries:
         country_ids = []
         for country in selected_countries:
             cur.execute("SELECT id FROM countries WHERE name = %s;", (country,))
             result = cur.fetchone()
             if result:
-                country_ids.append(result[0])  # Добавляем идентификатор в список
+                country_ids.append(result[0])
 
         if country_ids:
             where_clauses.append("""
@@ -173,8 +229,7 @@ def movies():
                 WHERE mc.movie_id = m.id AND mc.country_id IN %s
             )
             """)
-            params.append(tuple(country_ids))  # Используем идентификаторы
-
+            params.append(tuple(country_ids))
     
     if selected_actors:
         where_clauses.append("""
@@ -284,7 +339,12 @@ def izbr():
             FROM movie_countries mc
             JOIN countries c ON mc.country_id = c.id
             WHERE mc.movie_id = m.id
-        ) AS countries
+        ) AS countries,
+        (
+            SELECT STRING_AGG(t.trailer_url, ', ')
+            FROM trailers t
+            WHERE t.movie_id = m.id
+        ) AS trailers
     FROM movies m
     JOIN favorites f ON m.id = f.movie_id
     WHERE f.user_id = %s
@@ -296,6 +356,7 @@ def izbr():
 
     dbClose(cur, conn)
     return render_template('izbr.html', favorites=favorites)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -496,12 +557,6 @@ def add_movie():
             if 'image' in request.files:
                 file = request.files['image']
                 if file and allowed_file(file.filename):
-                    try:
-                        img = Image.open(file)
-                        img.verify()  # Проверяем, является ли файл допустимым изображением
-                    except Exception:
-                        flash('Файл не является допустимым изображением', 'danger')
-                        return redirect(request.referrer or url_for('add_movie'))
                     # Получаем расширение файла
                     filename, file_extension = os.path.splitext(secure_filename(file.filename))
                     file_extension = file_extension.lower()  # Приводим к нижнему регистру
@@ -559,14 +614,22 @@ def add_movie():
                     cur.execute("INSERT INTO actors (name) VALUES (%s) RETURNING id;", (actor,))
                     actor_ids.append(cur.fetchone()[0])
 
-            # Добавляем фильм с изображением и трейлером
+            # Добавляем фильм с изображением
             cur.execute("""
                 INSERT INTO movies 
-                (title, year, rating, description, image_path, trailer_url) 
-                VALUES (%s, %s, %s, %s, %s, %s) 
+                (title, year, rating, description, image_path) 
+                VALUES (%s, %s, %s, %s, %s) 
                 RETURNING id;
-            """, (title, year, rating or None, description or None, image_path, trailer_url or None))
+            """, (title, year, rating or None, description or None, image_path))
             movie_id = cur.fetchone()[0]
+
+            # Добавляем трейлер в новую таблицу
+            if trailer_url:
+                cur.execute("""
+                    INSERT INTO trailers (movie_id, trailer_url) 
+                    VALUES (%s, %s);
+                """, (movie_id, trailer_url))
+
 
             # Связываем фильм с жанрами
             for genre_id in genre_ids + selected_genres:

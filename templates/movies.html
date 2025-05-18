@@ -217,11 +217,12 @@
                         <img src="{{ url_for('static', filename='images/default.png') }}" alt="Default image">
                     {% endif %}
                     
-                    {% if movie[5] %}  {# Проверка на наличие ссылки на трейлер #}
-                        <a href="{{ movie[9] }}" target="_blank" class="trailer-link">Смотреть трейлер</a>
+                    {% if movie[8] %}  {# Проверка на наличие трейлеров #}
+                        <a href="{{ movie[8] }}" target="_blank" class="trailer-link">Смотреть трейлер</a>
                     {% else %}
                         <p>Трейлер отсутствует.</p>
                     {% endif %}
+
 
                     <h3>{{ movie[1] }} ({{ movie[2] }})</h3>
                     <p><strong>Рейтинг:</strong> {{ movie[3] or 'Нет оценки' }}</p>
