@@ -30,6 +30,14 @@ def dbClose(cursor, connection):
     cursor.close() 
     connection.close()
 
+def get_unread_notifications_count(user_id):
+    conn = dbConnect()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM notifications WHERE user_id = %s AND is_read = FALSE;", (user_id,))
+    count = cur.fetchone()[0]
+    dbClose(cur, conn)
+    return count
+
 @app.route('/')
 def index():
     return redirect('/movies')
@@ -45,6 +53,10 @@ def movies():
     
     if sort_order not in ['asc', 'desc']:
         sort_order = 'desc'
+
+    unread_notifications_count = get_unread_notifications_count(session['id']) if 'id' in session else 0
+    # Подсчет непрочитанных уведомлений
+
 
     # Основной запрос
     query = """
@@ -278,7 +290,8 @@ def movies():
                          selected_genres=selected_genres,
                          selected_countries=selected_countries,
                          selected_actors=selected_actors,
-                         favorites=favorites)
+                         favorites=favorites,
+                         unread_notifications_count=unread_notifications_count)
 
 @app.route('/add_favorite/<int:movie_id>')
 def add_favorite(movie_id):
@@ -324,6 +337,9 @@ def izbr():
     conn = dbConnect()
     cur = conn.cursor()
 
+    unread_notifications_count = get_unread_notifications_count(session['id']) if 'id' in session else 0
+    # Подсчет непрочитанных уведомлений
+
     query = """
     SELECT m.id, m.title, m.year, m.rating, m.description, m.image_path,
         (
@@ -339,6 +355,12 @@ def izbr():
             WHERE mc.movie_id = m.id
         ) AS countries,
         (
+            SELECT STRING_AGG(a.name, ', ')
+            FROM movie_actors ma
+            JOIN actors a ON ma.actor_id = a.id
+            WHERE ma.movie_id = m.id
+        ) AS actors,
+        (
             SELECT STRING_AGG(t.trailer_url, ', ')
             FROM trailers t
             WHERE t.movie_id = m.id
@@ -353,7 +375,7 @@ def izbr():
     favorites = cur.fetchall()
 
     dbClose(cur, conn)
-    return render_template('izbr.html', favorites=favorites)
+    return render_template('izbr.html', favorites=favorites, unread_notifications_count=unread_notifications_count)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -431,6 +453,9 @@ def user():
 
     conn = dbConnect()
     cur = conn.cursor()
+
+    unread_notifications_count = get_unread_notifications_count(session['id']) if 'id' in session else 0
+    # Подсчет непрочитанных уведомлений
 
     if request.method == 'POST':
         try:
@@ -517,7 +542,8 @@ def user():
                          actors=actors,
                          genre_prefs=genre_prefs,
                          country_prefs=country_prefs,
-                         actor_prefs=actor_prefs)
+                         actor_prefs=actor_prefs,
+                        unread_notifications_count=unread_notifications_count)
 
 @app.route('/logout')
 def logout():
@@ -542,6 +568,8 @@ def add_movie():
 
     cur.execute("SELECT id, name FROM actors ORDER BY name;")
     existing_actors = cur.fetchall()
+
+    movie_id = None
 
     if request.method == 'POST':
         try:
@@ -671,6 +699,36 @@ def add_movie():
 
             conn.commit()
             flash('Фильм успешно добавлен', 'success')
+            
+
+     
+            # После добавления фильма
+            cur.execute("SELECT id FROM users;")
+            users = cur.fetchall()
+
+            for user in users:
+                user_id = user[0]
+                cur.execute("SELECT genre FROM user_genres WHERE user_id = %s AND is_favorite = TRUE;", (user_id,))
+                favorite_genres = [row[0] for row in cur.fetchall()]
+
+                cur.execute("SELECT country FROM user_countries WHERE user_id = %s AND is_favorite = TRUE;", (user_id,))
+                favorite_countries = [row[0] for row in cur.fetchall()]
+
+                cur.execute("SELECT actor FROM user_actors WHERE user_id = %s AND is_favorite = TRUE;", (user_id,))
+                favorite_actors = [row[0] for row in cur.fetchall()]
+
+                app.logger.info(f"Пользователь ID: {user_id}, Любимые жанры: {favorite_genres}, Жанры фильма: {genre_ids}")
+
+                if (any(genre in favorite_genres for genre in genre_ids) or
+                        any(country in favorite_countries for country in country_ids) or
+                        any(actor in favorite_actors for actor in actor_ids)):
+
+                        cur.execute("""
+                            INSERT INTO notifications (user_id, movie_id, message) 
+                            VALUES (%s, %s, %s);
+                        """, (user_id, movie_id, 'Вышел новый фильм, соответствующий вашим предпочтениям'))
+                        conn.commit()  # Не забудьте вызвать commit()
+
             return redirect(url_for('movies'))
 
         except Exception as e:
@@ -685,6 +743,36 @@ def add_movie():
                          countries=existing_countries,
                          actors=existing_actors,
                          current_year=datetime.now().year)
+
+@app.route('/notifications')
+def notifications():
+    if 'id' not in session:
+        return redirect('/login')
+
+    conn = dbConnect()
+    cur = conn.cursor()
+
+    # Получаем уведомления для пользователя
+    cur.execute("SELECT * FROM notifications WHERE user_id = %s ORDER BY created_at DESC;", (session['id'],))
+    notifications = cur.fetchall()
+
+    # Обновляем статус уведомлений на прочитанные
+    cur.execute("UPDATE notifications SET is_read = TRUE WHERE user_id = %s;", (session['id'],))
+
+    conn.commit()
+
+    dbClose(cur, conn)
+    return render_template('notifications.html', notifications=notifications)
+
+def get_unread_notifications_count(user_id):
+    conn = dbConnect()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM notifications WHERE user_id = %s AND is_read = FALSE;", (user_id,))
+    count = cur.fetchone()[0]
+    dbClose(cur, conn)
+    return count
+
+
 
 
 

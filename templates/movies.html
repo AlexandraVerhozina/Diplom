@@ -16,6 +16,7 @@
             color: #fff;
             padding: 10px 0;
             text-align: center;
+            position: relative;
         }
         nav {
             margin: 20px 0;
@@ -117,6 +118,22 @@
             border-radius: 4px;
             width: 100%;
         }
+        .notification-icon {
+            position: absolute; /* Изменено на absolute для правильного позиционирования */
+            top: 10px; /* Позиция сверху в заголовке */
+            right: 20px; /* Позиция справа в заголовке */
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 5px;
+            font-size: 12px;
+        }
+
     </style>
 </head>
 <body>
@@ -136,6 +153,14 @@
                 <a href="/register">Регистрация</a>
             {% endif %}
         </nav>
+        {% if 'id' in session %}
+            <a href="{{ url_for('notifications') }}" class="notification-icon">
+                🔔
+                {% if unread_notifications_count > 0 %}
+                    <span class="notification-badge">{{ unread_notifications_count }}</span>
+                {% endif %}
+            </a>
+        {% endif %}
         <form method="POST" action="/movies">
             <input type="text" name="search" placeholder="Поиск фильмов..." value="{{ request.form.get('search', '') }}">
             <button type="submit">Найти</button>

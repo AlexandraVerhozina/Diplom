@@ -79,6 +79,21 @@
             border-radius: 4px;
             width: 100%;
         }
+        .notification-icon {
+            position: absolute; /* Изменено на absolute для правильного позиционирования */
+            top: 10px; /* Позиция сверху в заголовке */
+            right: 20px; /* Позиция справа в заголовке */
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 5px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -98,6 +113,14 @@
                 <a href="/register">Регистрация</a>
             {% endif %}
         </nav>
+        {% if 'id' in session %}
+            <a href="{{ url_for('notifications') }}" class="notification-icon">
+                🔔
+                {% if unread_notifications_count > 0 %}
+                    <span class="notification-badge">{{ unread_notifications_count }}</span>
+                {% endif %}
+            </a>
+        {% endif %}
     </header>
 
     <div class="container">
@@ -121,7 +144,7 @@
                         {% endif %}
                         
                         {% if movie[7] %}  {# Проверка на наличие трейлеров #}
-                            <a href="{{ movie[8] }}" target="_blank" class="trailer-link">Смотреть трейлер</a>
+                            <a href="{{ movie[9] }}" target="_blank" class="trailer-link">Смотреть трейлер</a>
                         {% else %}
                             <p>Трейлер отсутствует.</p>
                         {% endif %}
@@ -131,6 +154,7 @@
                             <p><strong>Рейтинг:</strong> {{ movie[3] or 'Нет оценки' }}</p>
                             <p><strong>Жанры:</strong> {{ movie[6] or 'Не указаны' }}</p>
                             <p><strong>Страны:</strong> {{ movie[7] or 'Не указаны' }}</p>
+                            <p><strong>Актеры:</strong> {{ movie[8] or 'Не указаны' }}</p>
                             <p>{{ movie[4] or '' }}</p>
                             <a href="{{ url_for('remove_favorite', movie_id=movie[0]) }}">Удалить из избранного</a>
                         </div>

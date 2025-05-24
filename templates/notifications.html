@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Уведомления</title>
+    <style>
+        
+        .notification-icon {
+            position: absolute; /* Изменено на absolute для правильного позиционирования */
+            top: 10px; /* Позиция сверху в заголовке */
+            right: 20px; /* Позиция справа в заголовке */
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 5px;
+            font-size: 12px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .notification-list {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .notification-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .unread {
+            background-color: #e0f7fa; /* Цвет для непрочитанных уведомлений */
+        }
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #333;
+            color: #fff;
+            position: fixed; 
+            bottom: 0;
+            left: 0; 
+            right: 0;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Уведомления</h1>
+        <div class="notification-list">
+            {% if notifications %}
+                {% for notification in notifications %}
+                    <div class="notification-item {% if not notification[4] %}unread{% endif %}">
+                        <p>{{ notification[3] }}</p>
+                        <small>{{ notification[5] }}</small> <!-- created_at -->
+                        <a href="{{ url_for('movies') }}?movie_id={{ notification[2] }}">Посмотреть фильм</a>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>У вас нет уведомлений.</p>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('index') }}" class="back-button">Назад</a>
+    </div>
+
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .notification-list {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .notification-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .unread {
+            background-color: #e0f7fa; /* Цвет для непрочитанных уведомлений */
+        }
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <footer>
+        <p>&copy; 2025 Онлайн Кинотеатр</p>
+    </footer>
+</body>
+</html>
