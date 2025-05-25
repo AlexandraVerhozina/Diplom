@@ -121,6 +121,10 @@
                 {% endif %}
             </a>
         {% endif %}
+        <form method="POST" action="/movies">
+            <input type="text" name="search" placeholder="Поиск фильмов..." value="{{ request.form.get('search', '') }}">
+            <button type="submit">Найти</button>
+        </form>
     </header>
 
     <div class="container">

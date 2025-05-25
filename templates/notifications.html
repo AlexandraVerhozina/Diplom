@@ -77,7 +77,7 @@
                     <div class="notification-item {% if not notification[4] %}unread{% endif %}">
                         <p>{{ notification[3] }}</p>
                         <small>{{ notification[5] }}</small>
-                        <a href="{{ url_for('movies') }}?movie_id={{ notification[2] }}">Посмотреть фильм</a>
+                        <a href="{{ url_for('movie_detail', movie_id=notification[2]) }}">Посмотреть фильм</a>
                     </div>
                 {% endfor %}
             {% else %}
