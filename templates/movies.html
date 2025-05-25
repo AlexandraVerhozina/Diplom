@@ -52,8 +52,12 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         .movie img {
-            max-width: 100%;
+            width: 200px; /* Установить фиксированную ширину */
+            height: 300px; /* Установить фиксированную высоту */
+            object-fit: cover; /* Сохранить пропорции изображения */
             border-radius: 5px;
+            display: block;
+            margin: 0 auto;
         }
         footer {
             text-align: center;
@@ -236,7 +240,7 @@
         <div class="movies-list">
             {% for movie in movies %}
                 <div class="movie">
-                    {# movie[5] - это image_path из запроса #}
+                    
                     {% if movie[5] %}
                         <img src="{{ url_for('static', filename=movie[5].replace('\\', '/')) }}" alt="{{ movie[1] }}" class="movie-poster">
 
@@ -244,27 +248,14 @@
                         <img src="{{ url_for('static', filename='images/default.jpg') }}" alt="Default image" class="movie-poster">
                     {% endif %}
                     
-                    {# movie[9] - это trailers из запроса #}
-                    {% if movie[9] %}
-                        <a href="{{ movie[9] }}" target="_blank" class="trailer-link">Смотреть трейлер</a>
-                    {% else %}
-                        <p>Трейлер отсутствует.</p>
-                    {% endif %}
-        
-                    <h3>{{ movie[1] }} ({{ movie[2] }})</h3>
+                    
+                    <a href="{{ url_for('movie_detail', movie_id=movie[0]) }}">
+                    <h3>{{ movie[1] }} ({{ movie[2] }})</h3></a>
                     <p><strong>Рейтинг:</strong> {{ movie[3] or 'Нет оценки' }}</p>
                     <p><strong>Жанры:</strong> {{ movie[6] or 'Не указаны' }}</p>
                     <p><strong>Страны:</strong> {{ movie[7] or 'Не указаны' }}</p>
                     <p><strong>Актеры:</strong> {{ movie[8] or 'Не указаны' }}</p>
-                    <p>{{ movie[4] or '' }}</p>
                     
-                    {% if 'id' in session %}
-                        {% if movie[0] in favorites %}
-                            <a href="{{ url_for('remove_favorite', movie_id=movie[0]) }}">Удалить из избранного</a>
-                        {% else %}
-                            <a href="{{ url_for('add_favorite', movie_id=movie[0]) }}">Добавить в избранное</a>
-                        {% endif %}
-                    {% endif %}
                 </div>
             {% endfor %}
         </div>

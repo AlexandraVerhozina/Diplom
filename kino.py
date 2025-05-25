@@ -293,6 +293,53 @@ def movies():
                          favorites=favorites,
                          unread_notifications_count=unread_notifications_count)
 
+@app.route('/movie/<int:movie_id>')
+def movie_detail(movie_id):
+    conn = dbConnect()
+    cur = conn.cursor()
+
+    unread_notifications_count = get_unread_notifications_count(session['id']) if 'id' in session else 0
+    # Подсчет непрочитанных уведомлений
+
+    # Получаем информацию о фильме
+    cur.execute("""
+    SELECT m.id, m.title, m.year, m.rating, m.description, m.image_path,
+        (
+            SELECT STRING_AGG(g.name, ', ')
+            FROM movie_genres mg
+            JOIN genres g ON mg.genre_id = g.id
+            WHERE mg.movie_id = m.id
+        ) AS genres,
+        (
+            SELECT STRING_AGG(c.name, ', ')
+            FROM movie_countries mc
+            JOIN countries c ON mc.country_id = c.id
+            WHERE mc.movie_id = m.id
+        ) AS countries,
+        (
+            SELECT STRING_AGG(a.name, ', ')
+            FROM movie_actors ma
+            JOIN actors a ON ma.actor_id = a.id
+            WHERE ma.movie_id = m.id
+        ) AS actors,
+        (
+            SELECT STRING_AGG(t.trailer_url, ', ')
+            FROM trailers t
+            WHERE t.movie_id = m.id
+        ) AS trailers
+    FROM movies m
+    WHERE m.id = %s;
+    """, (movie_id,))
+    movie = cur.fetchone()
+
+    if not movie:
+        return "Фильм не найден", 404
+
+    dbClose(cur, conn)
+    
+    return render_template('movie_detail.html', movie=movie, unread_notifications_count=unread_notifications_count)
+
+
 @app.route('/add_favorite/<int:movie_id>')
 def add_favorite(movie_id):
     if 'id' not in session:
