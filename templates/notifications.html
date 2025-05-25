@@ -76,7 +76,7 @@
                 {% for notification in notifications %}
                     <div class="notification-item {% if not notification[4] %}unread{% endif %}">
                         <p>{{ notification[3] }}</p>
-                        <small>{{ notification[5] }}</small> <!-- created_at -->
+                        <small>{{ notification[5] }}</small>
                         <a href="{{ url_for('movies') }}?movie_id={{ notification[2] }}">Посмотреть фильм</a>
                     </div>
                 {% endfor %}
@@ -87,42 +87,7 @@
         <a href="{{ url_for('index') }}" class="back-button">Назад</a>
     </div>
 
-    <style>
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-        }
-        .notification-list {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 10px;
-            background-color: #f9f9f9;
-        }
-        .notification-item {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        .notification-item:last-child {
-            border-bottom: none;
-        }
-        .unread {
-            background-color: #e0f7fa; /* Цвет для непрочитанных уведомлений */
-        }
-        .back-button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 15px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .back-button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    
     <footer>
         <p>&copy; 2025 Онлайн Кинотеатр</p>
     </footer>

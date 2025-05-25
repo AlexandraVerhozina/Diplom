@@ -673,6 +673,7 @@ def add_movie():
                     conn.rollback()
                     app.logger.error(f"Error adding genre: {e}")
 
+
             # Связываем фильм со странами
             for country_id in country_ids + selected_countries:
                 try:
@@ -702,32 +703,81 @@ def add_movie():
             
 
      
-            # После добавления фильма
+           # После добавления фильма
             cur.execute("SELECT id FROM users;")
             users = cur.fetchall()
 
             for user in users:
                 user_id = user[0]
+                
+                # Извлекаем любимые жанры пользователя
                 cur.execute("SELECT genre FROM user_genres WHERE user_id = %s AND is_favorite = TRUE;", (user_id,))
                 favorite_genres = [row[0] for row in cur.fetchall()]
 
+                # Извлекаем любимые страны пользователя
                 cur.execute("SELECT country FROM user_countries WHERE user_id = %s AND is_favorite = TRUE;", (user_id,))
                 favorite_countries = [row[0] for row in cur.fetchall()]
 
+                # Извлекаем любимых актеров пользователя
                 cur.execute("SELECT actor FROM user_actors WHERE user_id = %s AND is_favorite = TRUE;", (user_id,))
                 favorite_actors = [row[0] for row in cur.fetchall()]
 
-                app.logger.info(f"Пользователь ID: {user_id}, Любимые жанры: {favorite_genres}, Жанры фильма: {genre_ids}")
+                # Извлекаем жанры нового фильма
+                cur.execute("SELECT genre_id FROM movie_genres WHERE movie_id = %s;", (movie_id,))
+                genre_ids = [row[0] for row in cur.fetchall()]
 
-                if (any(genre in favorite_genres for genre in genre_ids) or
-                        any(country in favorite_countries for country in country_ids) or
-                        any(actor in favorite_actors for actor in actor_ids)):
+                # Извлекаем страны нового фильма
+                cur.execute("SELECT country_id FROM movie_countries WHERE movie_id = %s;", (movie_id,))
+                country_ids = [row[0] for row in cur.fetchall()]
 
-                        cur.execute("""
-                            INSERT INTO notifications (user_id, movie_id, message) 
-                            VALUES (%s, %s, %s);
-                        """, (user_id, movie_id, 'Вышел новый фильм, соответствующий вашим предпочтениям'))
-                        conn.commit()  # Не забудьте вызвать commit()
+                # Извлекаем актеров нового фильма
+                cur.execute("SELECT actor_id FROM movie_actors WHERE movie_id = %s;", (movie_id,))
+                actor_ids = [row[0] for row in cur.fetchall()]
+
+                # Преобразуем ID в названия для логирования
+                genre_names = []
+                for gid in genre_ids:
+                    cur.execute("SELECT name FROM genres WHERE id = %s;", (gid,))
+                    result = cur.fetchone()
+                    if result:
+                        genre_names.append(result[0])
+
+                country_names = []
+                for cid in country_ids:
+                    cur.execute("SELECT name FROM countries WHERE id = %s;", (cid,))
+                    result = cur.fetchone()
+                    if result:
+                        country_names.append(result[0])
+
+                actor_names = []
+                for aid in actor_ids:
+                    cur.execute("SELECT name FROM actors WHERE id = %s;", (aid,))
+                    result = cur.fetchone()
+                    if result:
+                        actor_names.append(result[0])
+
+                app.logger.info(f"Пользователь ID: {user_id}, Любимые жанры: {favorite_genres}, Жанры фильма: {genre_names}")
+                app.logger.info(f"Пользователь ID: {user_id}, Любимые страны: {favorite_countries}, Страны фильма: {country_names}")
+                app.logger.info(f"Пользователь ID: {user_id}, Любимые актеры: {favorite_actors}, Актеры фильма: {actor_names}")
+
+                # Проверяем соответствие хотя бы одному критерию
+                if (any(genre in favorite_genres for genre in genre_names) or
+                    any(country in favorite_countries for country in country_names) or
+                    any(actor in favorite_actors for actor in actor_names)):
+                    
+                    app.logger.info(f"Уведомление добавлено для пользователя ID: {user_id} о фильме ID: {movie_id}")
+                    cur.execute("""
+                        INSERT INTO notifications (user_id, movie_id, message) 
+                        VALUES (%s, %s, %s);
+                    """, (user_id, movie_id, 'Вышел новый фильм, соответствующий вашим предпочтениям'))
+                    conn.commit()  
+                else:
+                    app.logger.info(f"Уведомление не добавлено для пользователя ID: {user_id} - нет соответствия.")
+
+
+
+  
+
 
             return redirect(url_for('movies'))
 
@@ -771,10 +821,6 @@ def get_unread_notifications_count(user_id):
     count = cur.fetchone()[0]
     dbClose(cur, conn)
     return count
-
-
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
