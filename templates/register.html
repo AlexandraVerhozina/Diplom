@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация</title>
     <style>
+        * {
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -15,62 +20,101 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            background: url(https://media4.giphy.com/media/BHNfhgU63qrks/giphy.gif) center center no-repeat;
+            background-size: cover;
         }
 
         .container {
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.8);
             padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            width: 320px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         h2 {
-            margin-bottom: 20px;
+            color: #444;
             text-align: center;
+            font-weight: normal;
+            font-size: 24px;
+            margin-bottom: 30px;
         }
 
         label {
             display: block;
             margin-bottom: 5px;
+            color: #444;
         }
 
         input[type="text"],
         input[type="email"],
         input[type="password"] {
             width: 100%;
-            padding: 8px;
+            height: 40px;
+            padding: 8px 15px;
             box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            border: 1px solid rgba(0, 0, 0, 0.5);
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
         }
 
         input[type="submit"] {
-            background-color: #28a745;
-            color: #fff;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #444;
             border: none;
             border-radius: 5px;
-            padding: 10px;
+            padding: 12px;
             cursor: pointer;
             width: 100%;
+            font-size: 15px;
+            margin-top: 30px;
+            font-weight: bold;
+            transition: all 0.3s ease;
         }
 
         input[type="submit"]:hover {
-            background-color: #218838;
+            background-color: rgba(102, 102, 255);
+            color: white;
         }
 
         .message {
             text-align: center;
-            margin-top: 15px;
+            margin-top: 20px;
+            color: #444;
+        }
+
+        .message a {
+            color: #6666ff;
+            text-decoration: none;
+        }
+
+        .message a:hover {
+            text-decoration: underline;
         }
 
         .error {
-            background: #ffdddd;
+            background: rgba(255, 221, 221, 0.9);
             color: #d8000c;
             border: 1px solid #d8000c;
             padding: 15px;
             margin: 20px 0;
             border-radius: 5px;
+            text-align: center;
+        }
+
+        ::placeholder {
+            color: #888;
         }
     </style>
 </head>
@@ -80,15 +124,15 @@
         <h2>Регистрация</h2>
         <form action="/register" method="POST">
             <label for="username">Имя пользователя:</label>
-            <input type="text" id="username" name="username" required>
+            <input type="text" id="username" name="username" required placeholder="Введите имя пользователя">
 
             <label for="email">Электронная почта:</label>
-            <input type="email" id="email" name="email" required>
+            <input type="email" id="email" name="email" required placeholder="Введите email">
 
             <label for="password">Пароль:</label>
-            <input type="password" id="password" name="password" required><br>
+            <input type="password" id="password" name="password" required placeholder="Введите пароль">
 
-            <br><input type="submit" value="Зарегистрироваться">
+            <input type="submit" value="Зарегистрироваться">
         </form>
         {% if error %}
             <div class="error">{{ error }}</div>
@@ -96,9 +140,6 @@
 
         <div class="message">
             <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
-        </div>
-
-        <div class="message">
             <p>Главная страница <a href="/">Главная</a></p>
         </div>
     </div>

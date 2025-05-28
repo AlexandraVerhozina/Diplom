@@ -5,225 +5,268 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Профиль пользователя</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        header {
-            background: #333;
-            color: #fff;
-            padding: 10px 0;
-            text-align: center;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            
-        }
-        .preferences-section {
-            margin-bottom: 30px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 5px;
-        }
-        .preferences-columns {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .preferences-column {
-            flex: 1;
-        }
-        .preferences-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            padding: 10px;
-            background: white;
-            border-radius: 5px;
-        }
-        .rating-selector {
-            margin: 20px 0;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 5px;
-        }
-        .rating-selector label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-        .rating-slider {
-            width: 100%;
-            margin: 10px 0;
-        }
-        .rating-value {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #333;
-        }
-        nav {
-            margin: 20px 0;
-        }
-        nav a {
-            color: #fff;
-            margin: 0 15px;
-            text-decoration: none;
-        }
-        footer {
-            text-align: center;
-            padding: 20px;
-            background: #333;
-            color: #fff;
-        }
-        .save-btn {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-        .save-btn:hover {
-            background: #45a049;
-        }
-        .notification-icon {
-            position: absolute; /* Изменено на absolute для правильного позиционирования */
-            top: 10px; /* Позиция сверху в заголовке */
-            right: 20px; /* Позиция справа в заголовке */
-        }
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -10px;
-            background-color: red;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 5px;
-            font-size: 12px;
-        }
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            position: relative;
-            padding: 0 20px;
-        }
-        nav {
-            margin: 20px 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .main-links {
-            display: flex;
-            gap: 30px;
-        }
-        .main-links a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 18px;
-            padding: 10px 20px;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        .main-links a:hover {
-            background-color: rgba(57, 162, 8, 0.8);
-            transform: translateY(-2px);
-        }
-        .main-links a::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 0;
-            height: 2px;
-            background: #39a208;
-            transition: all 0.3s ease;
-        }
-        .main-links a:hover::after {
-            width: 100%;
-            left: 0;
-        }
-        .user-section {
-            position:absolute;
-            right: -50px;
-            top: 10px;
-            display: flex;
-            align-items: center;
-           
-        }
-        .user-actions {
-            display: flex;
-            gap: 10px;
-        }
-        .user-actions a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: bold;
-            padding: 8px 15px;
-            border-radius: 5px;
-            background: #444;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-        .user-actions a:hover {
-            background: #555;
-            transform: translateY(-1px);
-        }
-        .notification-icon {
-            font-size: 24px;
-            color: white;
-            position: relative;
-            right: -50px;
-            display: inline-block;
-        }
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -10px;
-            background-color: red;
-            color: white;
-            border-radius: 50%;
-            padding: 4px 8px;
-            font-size: 12px;
-        }
-        .search-form {
-            margin: 20px auto;
-            width: 60%;
-            max-width: 600px;
-        }
-        .search-form input[type="text"] {
-            width: 70%;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 5px 0 0 5px;
-            border: 1px solid #ddd;
-            outline: none;
-        }
-        .search-form button {
-            padding: 12px 20px;
-            font-size: 16px;
-            border-radius: 0 5px 5px 0;
-            border: none;
-            background: #39a208;
-            color: white;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-        .search-form button:hover {
-            background: #2d8106;
-        } 
-    </style>
+    :root {
+        --celadon: #b9f0d7;       /* RGB: 185, 240, 215 */
+        --rich-black: #0c0c16;    /* RGB: 12, 12, 22 */
+        --columbia-blue: #c9e8ff; /* RGB: 201, 232, 255 */
+        --periwinkle: #b8baff;    /* RGB: 184, 186, 255 */
+        --slate-blue: #6666ff;    /* RGB: 102, 102, 255 */
+        --light-bg: #b9e2f7;
+        --text-dark: #333333;
+        --text-light: #ffffff;
+    }
+    
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: var(--rich-black);
+    }
+    
+    header {
+        background: var(--rich-black);
+        color: var(--text-light);
+        padding: 10px 0;
+        text-align: center;
+    }
+    
+    .container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+        background: var(--text-light);
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .preferences-section {
+        margin-bottom: 30px;
+        padding: 15px;
+        background: var(--slate-blue);
+        border-radius: 5px;
+    }
+    
+    .preferences-columns {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .preferences-column {
+        flex: 1;
+    }
+    
+    .preferences-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--periwinkle);
+        padding: 10px;
+        background: var(--text-light);
+        border-radius: 5px;
+    }
+    
+    .rating-selector {
+        margin: 20px 0;
+        padding: 15px;
+        background: var(--slate-blue);
+        border-radius: 5px;
+    }
+    
+    .rating-selector label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+    
+    .rating-slider {
+        width: 100%;
+        margin: 10px 0;
+    }
+    
+    .rating-value {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: var(--text-dark);
+    }
+    
+    nav {
+        margin: 20px 0;
+    }
+    
+    nav a {
+        color: var(--text-light);
+        margin: 0 15px;
+        text-decoration: none;
+    }
+    
+    footer {
+        text-align: center;
+        padding: 20px;
+        background: var(--rich-black);
+        color: var(--text-light);
+    }
+    
+    .save-btn {
+        background: #6666ff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+    }
+    
+    
+    .notification-icon {
+        position: absolute; 
+        top: 10px; /* Позиция сверху в заголовке */
+        right: 20px; /* Позиция справа в заголовке */
+        color: var(--text-light);
+    }
+    
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -10px;
+        background-color: #ff4d4d;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 5px;
+        font-size: 12px;
+    }
+    
+    .header-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        position: relative;
+        padding: 0 20px;
+    }
+    
+    nav {
+        margin: 20px 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .main-links {
+        display: flex;
+        gap: 30px;
+    }
+    
+    .main-links a {
+        color: var(--text-light);
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 18px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        position: relative;
+        background-color: var(--rich-black);
+    }
+    
+    .main-links a:hover {
+        background-color: var(--slate-blue);
+        transform: translateY(-2px);
+    }
+    
+    .main-links a::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background: var(--celadon);
+        transition: all 0.3s ease;
+    }
+    
+    .main-links a:hover::after {
+        width: 100%;
+        left: 0;
+    }
+    
+    .user-section {
+        position:absolute;
+        right: -50px;
+        top: 10px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .user-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .user-actions a {
+        color: var(--text-light);
+        text-decoration: none;
+        font-weight: bold;
+        padding: 8px 15px;
+        border-radius: 5px;
+        background: var(--slate-blue);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+    
+    .user-actions a:hover {
+        background: var(--periwinkle);
+        transform: translateY(-1px);
+    }
+    
+    .notification-icon {
+        font-size: 24px;
+        color: var(--text-light);
+        position: relative;
+        right: -50px;
+        display: inline-block;
+    }
+    
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -10px;
+        background-color: #ff4d4d;
+        color: white;
+        border-radius: 50%;
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+    
+    .search-form {
+        margin: 20px auto;
+        width: 60%;
+        max-width: 600px;
+    }
+    
+    .search-form input[type="text"] {
+        width: 70%;
+        padding: 12px;
+        font-size: 16px;
+        border-radius: 5px 0 0 5px;
+        border: 1px solid var(--columbia-blue);
+        outline: none;
+        background-color: rgba(201, 232, 255, 0.3);
+    }
+    
+    .search-form button {
+        padding: 12px 20px;
+        font-size: 16px;
+        border-radius: 0 5px 5px 0;
+        border: none;
+        background: var(--slate-blue);
+        color: var(--text-light);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .search-form button:hover {
+        background: var(--periwinkle);
+    }
+</style>    
     
     <header>
         <div class="header-content">

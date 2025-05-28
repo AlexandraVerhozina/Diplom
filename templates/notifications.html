@@ -6,63 +6,86 @@
     <title>Уведомления</title>
     <style>
         
-        .notification-icon {
-            position: absolute; /* Изменено на absolute для правильного позиционирования */
-            top: 10px; /* Позиция сверху в заголовке */
-            right: 20px; /* Позиция справа в заголовке */
+        :root {
+            --celadon: #b9f0d7;       /* RGB: 185, 240, 215 */
+            --rich-black: #0c0c16;    /* RGB: 12, 12, 22 */
+            --columbia-blue: #c9e8ff; /* RGB: 201, 232, 255 */
+            --periwinkle: #b8baff;    /* RGB: 184, 186, 255 */
+            --slate-blue: #6666ff;    /* RGB: 102, 102, 255 */
+            --light-bg: #f4f4f4;
+            --text-dark: #333333;
+            --text-light: #ffffff;
         }
+
+        .notification-icon {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            color: var(--text-light);
+        }
+
         .notification-badge {
             position: absolute;
             top: -5px;
             right: -10px;
-            background-color: red;
-            color: white;
+            background-color: #ff4d4d;
+            color: var(--text-light);
             border-radius: 50%;
             padding: 2px 5px;
             font-size: 12px;
         }
+
         .container {
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
             font-family: Arial, sans-serif;
+            background-color: var(--light-bg);
         }
+
         .notification-list {
-            border: 1px solid #ccc;
+            border: 1px solid var(--columbia-blue);
             border-radius: 5px;
             padding: 10px;
             background-color: #f9f9f9;
         }
+
         .notification-item {
             padding: 10px;
             border-bottom: 1px solid #ddd;
         }
+
         .notification-item:last-child {
             border-bottom: none;
         }
+
         .unread {
-            background-color: #e0f7fa; /* Цвет для непрочитанных уведомлений */
+            background-color: #e0f7fa;
         }
+
         .back-button {
             display: inline-block;
             margin-top: 20px;
             padding: 10px 15px;
-            background-color: #007bff;
-            color: white;
+            background-color: var(--slate-blue);
+            color: var(--text-light);
             text-decoration: none;
             border-radius: 5px;
+            transition: background-color 0.3s ease;
         }
+
         .back-button:hover {
-            background-color: #0056b3;
+            background-color: var(--periwinkle);
         }
+
         footer {
             text-align: center;
             padding: 20px;
-            background: #333;
-            color: #fff;
-            position: fixed; 
+            background: var(--rich-black);
+            color: var(--text-light);
+            position: fixed;
             bottom: 0;
-            left: 0; 
+            left: 0;
             right: 0;
         }
 

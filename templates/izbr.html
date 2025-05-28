@@ -5,51 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Избранное</title>
      <style>
+        :root {
+            --celadon: #b9f0d7;       /* RGB: 185, 240, 215 */
+            --rich-black: #0c0c16;    /* RGB: 12, 12, 22 */
+            --columbia-blue: #c9e8ff; /* RGB: 201, 232, 255 */
+            --periwinkle: #b8baff;    /* RGB: 184, 186, 255 */
+            --slate-blue: #6666ff;    /* RGB: 102, 102, 255 */
+            --light-bg: #b9e2f7;
+            --text-dark: #333333;
+            --text-light: #ffffff;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            background-color: var(--rich-black);
         }
+
         header {
-            background: #333;
-            color: #fff;
-            padding: 10px 0;
+            background: var(--rich-black);
+            color: var(--text-light);
+            padding: 20px 0;
             text-align: center;
+            position: relative;
         }
+
         nav {
             margin: 20px 0;
         }
+
         nav a {
-            color: #fff;
+            color: var(--text-light);
             margin: 0 15px;
             text-decoration: none;
         }
+
         .container {
             max-width: 1200px;
             margin: auto;
             padding: 20px;
+            background-color: var(--slate-blue);
+            border-radius: 5px;
         }
+
         .movie {
-            background: #fff;
-            border: 1px solid #ddd;
+            background: var(--text-light);
+            border: 1px solid var(--columbia-blue);
             border-radius: 5px;
             margin: 10px 0;
             padding: 15px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
         .movie img {
             max-width: 200px;
             float: left;
             margin-right: 15px;
             border-radius: 5px;
         }
+
         .movie-info {
             overflow: hidden;
         }
+
         .clear {
             clear: both;
         }
+
         .message {
             background: #ffdddd;
             color: #d8000c;
@@ -75,51 +98,50 @@
 
         input[type="file"] {
             padding: 5px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--columbia-blue);
             border-radius: 4px;
             width: 100%;
         }
+
         .notification-icon {
-            position: absolute; /* Изменено на absolute для правильного позиционирования */
+            position: absolute; 
             top: 10px; /* Позиция сверху в заголовке */
             right: 20px; /* Позиция справа в заголовке */
+            color: var(--text-light);
         }
+
         .notification-badge {
             position: absolute;
             top: -5px;
             right: -10px;
-            background-color: red;
+            background-color: #ff4d4d;
             color: white;
             border-radius: 50%;
             padding: 2px 5px;
             font-size: 12px;
         }
-        
-        header {
-            background: #333;
-            color: #fff;
-            padding: 20px 0;
-            text-align: center;
-            position: relative;
-        }
+
         .header-content {
             max-width: 1200px;
             margin: 0 auto;
             position: relative;
             padding: 0 20px;
         }
+
         nav {
             margin: 20px 0;
             display: flex;
             justify-content: center;
             align-items: center;
         }
+
         .main-links {
             display: flex;
             gap: 30px;
         }
+
         .main-links a {
-            color: #fff;
+            color: var(--text-light);
             text-decoration: none;
             font-weight: bold;
             font-size: 18px;
@@ -127,11 +149,14 @@
             border-radius: 5px;
             transition: all 0.3s ease;
             position: relative;
+            background-color: var(--rich-black);
         }
+
         .main-links a:hover {
-            background-color: rgba(57, 162, 8, 0.8);
+            background-color: var(--slate-blue);
             transform: translateY(-2px);
         }
+
         .main-links a::after {
             content: '';
             position: absolute;
@@ -139,99 +164,113 @@
             left: 50%;
             width: 0;
             height: 2px;
-            background: #39a208;
+            background: var(--celadon);
             transition: all 0.3s ease;
         }
+
         .main-links a:hover::after {
             width: 100%;
             left: 0;
         }
+
         .user-section {
             position:absolute;
             right: -50px;
             top: 10px;
             display: flex;
             align-items: center;
-           
         }
+
         .user-actions {
             display: flex;
             gap: 10px;
         }
+
         .user-actions a {
-            color: #fff;
+            color: var(--text-light);
             text-decoration: none;
             font-weight: bold;
             padding: 8px 15px;
             border-radius: 5px;
-            background: #444;
+            background: var(--slate-blue);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
             font-size: 14px;
         }
+
         .user-actions a:hover {
-            background: #555;
+            background: var(--periwinkle);
             transform: translateY(-1px);
         }
+
         .notification-icon {
             font-size: 24px;
-            color: white;
+            color: var(--text-light);
             position: relative;
             right: -50px;
             display: inline-block;
         }
+
         .notification-badge {
             position: absolute;
             top: -5px;
             right: -10px;
-            background-color: red;
+            background-color: #ff4d4d;
             color: white;
             border-radius: 50%;
             padding: 4px 8px;
             font-size: 12px;
         }
+
         .search-form {
             margin: 20px auto;
             width: 60%;
             max-width: 600px;
         }
+
         .search-form input[type="text"] {
             width: 70%;
             padding: 12px;
             font-size: 16px;
             border-radius: 5px 0 0 5px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--columbia-blue);
             outline: none;
+            background-color: rgba(201, 232, 255, 0.3);
         }
+
         .search-form button {
             padding: 12px 20px;
             font-size: 16px;
             border-radius: 0 5px 5px 0;
             border: none;
-            background: #39a208;
-            color: white;
+            background: var(--slate-blue);
+            color: var(--text-light);
             cursor: pointer;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
         }
+
         .search-form button:hover {
-            background: #2d8106;
+            background: var(--periwinkle);
         }
-        
+
         footer {
             text-align: center;
             padding: 20px;
-            background: #333;
-            color: #fff;
+            background: var(--rich-black);
+            color: var(--text-light);
         }
+
         .movie h3 {
-            color: #39a208;
+            color: var(--slate-blue);
             margin: 10px 0;
             font-size: 20px;
         }
+
         .movie p {
             margin: 8px 0;
-            color: #555;
+            color: var(--text-dark);
         }
+
     </style>
     
     <header>

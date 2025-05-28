@@ -5,26 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Добавить фильм</title>
     <style>
+       :root {
+            --celadon: #b9f0d7;       /* RGB: 185, 240, 215 */
+            --rich-black: #0c0c16;    /* RGB: 12, 12, 22 */
+            --columbia-blue: #c9e8ff; /* RGB: 201, 232, 255 */
+            --periwinkle: #b8baff;    /* RGB: 184, 186, 255 */
+            --slate-blue: #6666ff;    /* RGB: 102, 102, 255 */
+            --light-bg: #f4f4f4;
+            --text-dark: #333333;
+            --text-light: #ffffff;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            background-color: var(--rich-black);
         }
+
         header {
-            background: #333;
-            color: #fff;
+            background: var(--rich-black);
+            color: var(--text-light);
             padding: 10px 0;
             text-align: center;
+            position: relative;
         }
+
         nav {
             margin: 20px 0;
         }
+
         nav a {
-            color: #ffffff;
+            color: var(--text-light);
             margin: 0 15px;
             text-decoration: none;
         }
+
         .container {
             max-width: 1000px;
             margin: 0 auto;
@@ -33,103 +49,126 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
+
         .form-group {
             margin-bottom: 15px;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
+
         input[type="text"],
         input[type="number"],
         textarea,
         select {
             width: 100%;
             padding: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--columbia-blue);
             border-radius: 4px;
             box-sizing: border-box;
         }
+
         textarea {
             height: 100px;
             resize: vertical;
         }
+
         .checkbox-group {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             margin: 10px 0;
         }
+
         .checkbox-item {
             display: flex;
             align-items: center;
             gap: 5px;
         }
+
         .section {
             margin-bottom: 25px;
             padding: 15px;
             border: 1px solid #eee;
             border-radius: 5px;
+            background: var(--columbia-blue);
         }
+
         .section-title {
             margin-top: 0;
             color: #444;
         }
+
         .btn {
-            background: #4CAF50;
-            color: white;
+            background: var(--slate-blue);
+            color: var(--text-light);
             border: none;
             padding: 10px 15px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            transition: all 0.3s ease;
         }
+
         .btn:hover {
-            background: #45a049;
+            background: var(--periwinkle);
         }
+
         .new-items-input {
             width: 100%;
             margin-top: 10px;
             padding: 8px;
+            border: 1px solid var(--columbia-blue);
+            border-radius: 4px;
         }
+
         .flash-message {
             padding: 10px;
             margin-bottom: 20px;
             border-radius: 4px;
         }
+
         .flash-success {
             background-color: #dff0d8;
             color: #3c763d;
         }
+
         .flash-danger {
             background-color: #f2dede;
             color: #a94442;
         }
+
         footer {
             text-align: center;
             padding: 20px;
-            background: #333;
-            color: #fff;
+            background: var(--rich-black);
+            color: var(--text-light);
         }
+
         .header-content {
             max-width: 1200px;
             margin: 0 auto;
             position: relative;
             padding: 0 20px;
         }
+
         nav {
             margin: 20px 0;
             display: flex;
             justify-content: center;
             align-items: center;
         }
+
         .main-links {
             display: flex;
             gap: 30px;
         }
+
         .main-links a {
-            color: #fff;
+            color: var(--text-light);
             text-decoration: none;
             font-weight: bold;
             font-size: 18px;
@@ -137,11 +176,14 @@
             border-radius: 5px;
             transition: all 0.3s ease;
             position: relative;
+            background-color: var(--rich-black);
         }
+
         .main-links a:hover {
-            background-color: rgba(57, 162, 8, 0.8);
+            background-color: var(--slate-blue);
             transform: translateY(-2px);
         }
+
         .main-links a::after {
             content: '';
             position: absolute;
@@ -149,57 +191,64 @@
             left: 50%;
             width: 0;
             height: 2px;
-            background: #39a208;
+            background: var(--celadon);
             transition: all 0.3s ease;
         }
+
         .main-links a:hover::after {
             width: 100%;
             left: 0;
         }
+
         .user-section {
             position:absolute;
             right: -50px;
             top: 10px;
             display: flex;
             align-items: center;
-           
         }
+
         .user-actions {
             display: flex;
             gap: 10px;
         }
+
         .user-actions a {
-            color: #fff;
+            color: var(--text-light);
             text-decoration: none;
             font-weight: bold;
             padding: 8px 15px;
             border-radius: 5px;
-            background: #444;
+            background: var(--slate-blue);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
             font-size: 14px;
         }
+
         .user-actions a:hover {
-            background: #555;
+            background: var(--periwinkle);
             transform: translateY(-1px);
         }
+
         .notification-icon {
             font-size: 24px;
-            color: white;
+            color: var(--text-light);
             position: relative;
             right: -50px;
             display: inline-block;
         }
+
         .notification-badge {
             position: absolute;
             top: -5px;
             right: -10px;
-            background-color: red;
+            background-color: #ff4d4d;
             color: white;
             border-radius: 50%;
             padding: 4px 8px;
             font-size: 12px;
         }
+
     </style>
 </head>
 <body>
