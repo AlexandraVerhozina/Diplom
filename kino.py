@@ -606,6 +606,9 @@ def add_movie():
     conn = dbConnect()
     cur = conn.cursor()
 
+    unread_notifications_count = get_unread_notifications_count(session['id']) if 'id' in session else 0
+    # Подсчет непрочитанных уведомлений
+
     # Получаем существующие данные для выпадающих списков
     cur.execute("SELECT id, name FROM genres ORDER BY name;")
     existing_genres = cur.fetchall()
@@ -839,6 +842,7 @@ def add_movie():
                          genres=existing_genres,
                          countries=existing_countries,
                          actors=existing_actors,
+                         unread_notifications_count=unread_notifications_count,
                          current_year=datetime.now().year)
 
 @app.route('/notifications')
