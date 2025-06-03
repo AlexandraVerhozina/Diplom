@@ -1,10 +1,6 @@
 from . import db
 from flask_login import UserMixin
 
-'''
-Описываем схему нашей БД в виде объектов
-Таким образом, создание таблицц возьмет  на себя  SQLAlchemy
-'''
 
 class users(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)

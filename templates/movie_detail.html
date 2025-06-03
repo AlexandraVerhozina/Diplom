@@ -338,11 +338,7 @@
         <p><strong>Актеры:</strong> {{ movie[8] or 'Не указаны' }}</p>
         <a href="{{ url_for('movies') }}" class="back-button">Назад к каталогу</a>
         {% if 'id' in session %}
-            {% if movie[0] in favorites %}
-                <a href="{{ url_for('remove_favorite', movie_id=movie[0]) }}">Удалить из избранного</a>
-            {% else %}
-                <a href="{{ url_for('add_favorite', movie_id=movie[0]) }}">Добавить в избранное</a>
-            {% endif %}
+            <a href="{{ url_for('add_favorite', movie_id=movie[0]) }}">Добавить в избранное</a>
         {% endif %}
     </div>
     <footer>
